@@ -18,16 +18,16 @@ class TransactionDAO:
     created_at: str
     amount_in_cents: str
     reference: str
-    customer_email: str
     currency: str
     payment_method_type: str
     payment_method: dict
     status: str
-    shipping_address: str
-    payment_source_id: str
-    payment_link_id: str
-    customer_data: str
-    bill_id: str
+    customer_email: str = None
+    shipping_address: str = None
+    payment_source_id: str = None
+    payment_link_id: str = None
+    customer_data: str = None
+    bill_id: str = None
 
     def __init__(self, **kwargs):
         for _ in kwargs:

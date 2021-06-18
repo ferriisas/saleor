@@ -26,7 +26,7 @@ class WOMPI_PAYMENT_METHODS:
     NEQUI = "CARD"
     PSE = "CARD"
     CASH_AT_BBC = "CARD"
-    BANC_TRA_Button = "BANC_TRA_Button"
+    BANC_TRA_Button = "BANCOLOMBIA_COLLECT"
 
 
 class WompiHandler:
@@ -58,6 +58,10 @@ class WompiHandler:
     def _append_authorization(self, headers):
         if self.authentication_required:
             headers["Authorization"] = "Bearer {}".format(self._secret)
+        else:
+            if "Authorization" in headers:
+                del headers["Authorization"]
+
         return headers
 
     def send_request(self):
@@ -126,6 +130,13 @@ class Transaction(WompiHandler):
             raise self.exception_class("Required keys are not provided ")
         self.payload = json.dumps(payload)
         return self.send_request()
+
+    def get_transaction(self, payment_id):
+        self.path = "transactions/{}".format(payment_id)
+        self.method_type = MethodType.GET
+        self.authentication_required = False
+        resp = super().send_request()
+        return self.DAO(**resp.get("data"))
 
     def send_request(self):
         resp = super().send_request()
