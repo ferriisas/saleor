@@ -1,0 +1,25 @@
+{
+  "data": {
+    "id": "110801-1623998159-18787",
+    "created_at": "2021-06-18T06:35:59.932Z",
+    "amount_in_cents": 2500000,
+    "reference": "2322er3234ed4",
+    "customer_email": "pepito_perez@example.com",
+    "currency": "COP",
+    "payment_method_type": "NEQUI",
+    "payment_method": {
+      "type": "NEQUI",
+      "phone_number": "3107654321"
+    },
+    "status": "PENDING",
+    "status_message": null,
+    "shipping_address": null,
+    "redirect_url": null,
+    "payment_source_id": null,
+    "payment_link_id": null,
+    "customer_data": null,
+    "bill_id": null,
+    "taxes": []
+  },
+  "meta": {}
+}

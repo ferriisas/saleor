@@ -1,15 +1,16 @@
 import json
+
 import requests
 
-from .constants import URL
+from .constants import WompiURL as URL
 
 
 class Client:
     """Wompi client class"""
 
     DEFAULTS = {
-        'base_url': URL.BASE_URL,
-        'sandbox_url': URL.SANDBOX_URL,
+        "base_url": URL.PRODUCTION_URL,
+        "sandbox_url": URL.SANDBOX_URL,
     }
 
     def __init__(self, session=None, auth=None, sandbox=True, **options):
@@ -27,20 +28,20 @@ class Client:
             self.base_url = self._set_base_url(**options)
 
     def _set_base_url(self, **options):
-        base_url = self.DEFAULTS['base_url']
+        base_url = self.DEFAULTS["base_url"]
 
-        if 'base_url' in options:
-            base_url = options['base_url']
-            del (options['base_url'])
+        if "base_url" in options:
+            base_url = options["base_url"]
+            del options["base_url"]
 
         return base_url
 
     def _set_sandbox_url(self, **options):
-        sandbox_url = self.DEFAULTS['sandbox_url']
+        sandbox_url = self.DEFAULTS["sandbox_url"]
 
-        if 'sandbox_url' in options:
-            sandbox_url = options['sandbox_url']
-            del (options['sandbox_url'])
+        if "sandbox_url" in options:
+            sandbox_url = options["sandbox_url"]
+            del options["sandbox_url"]
 
         return sandbox_url
 
@@ -56,49 +57,49 @@ class Client:
         """
         Parses GET request options and dispatches a request
         """
-        return self.request('get', path, params=params, **options)
+        return self.request("get", path, params=params, **options)
 
     def post(self, path, data, **options):
         """
         Parses POST request options and dispatches a request
         """
         data, options = self._update_request(data, options)
-        return self.request('post', path, data=data, **options)
+        return self.request("post", path, data=data, **options)
 
     def patch(self, path, data, **options):
         """
         Parses PATCH request options and dispatches a request
         """
         data, options = self._update_request(data, options)
-        return self.request('patch', path, data=data, **options)
+        return self.request("patch", path, data=data, **options)
 
     def delete(self, path, data, **options):
         """
         Parses DELETE request options and dispatches a request
         """
         data, options = self._update_request(data, options)
-        return self.request('delete', path, data=data, **options)
+        return self.request("delete", path, data=data, **options)
 
     def put(self, path, data, **options):
         """
         Parses PUT request options and dispatches a request
         """
         data, options = self._update_request(data, options)
-        return self.request('put', path, data=data, **options)
+        return self.request("put", path, data=data, **options)
 
     def _update_request(self, data, options):
         """
         Updates The resource data and header options
         """
 
-        data['userName'] = self.auth[0]
-        data['password'] = self.auth[1]
-        data['locale'] = 'co'
+        data["userName"] = self.auth[0]
+        data["password"] = self.auth[1]
+        data["locale"] = "co"
 
-        if 'headers' not in options:
-            options['headers'] = {}
+        if "headers" not in options:
+            options["headers"] = {}
 
-        options['headers'].update({'Content-type': 'application/x-www-form-urlencoded'})
-        options['headers'].update({'Accept': 'application/json'})
+        options["headers"].update({"Content-type": "application/x-www-form-urlencoded"})
+        options["headers"].update({"Accept": "application/json"})
 
         return data, options

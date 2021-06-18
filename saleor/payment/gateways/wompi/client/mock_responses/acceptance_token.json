@@ -1,0 +1,32 @@
+{
+  "data": {
+    "id": 10801,
+    "name": "Ferrii",
+    "email": "luisovejo70@gmail.com",
+    "contact_name": "Luis Eduardo Duran Florez",
+    "phone_number": "+573183573889",
+    "active": true,
+    "logo_url": null,
+    "legal_name": "Luis Eduardo Duran Florez",
+    "legal_id_type": "CC",
+    "legal_id": "1114829629",
+    "public_key": "xxx",
+    "accepted_currencies": [
+      "COP"
+    ],
+    "fraud_javascript_key": "zzzzz",
+    "accepted_payment_methods": [
+      "BANCOLOMBIA_TRANSFER",
+      "NEQUI",
+      "PSE",
+      "CARD",
+      "BANCOLOMBIA_COLLECT"
+    ],
+    "presigned_acceptance": {
+      "acceptance_token": "eyJhbGciOiJIUzI1NiJ9.eyJjb250cmFjdF9pZCI6MSwicGVybWFsaW5rIjoiaHR0cHM6Ly93b21waS5jby93cC1jb250ZW50L3VwbG9hZHMvMjAxOS8wOS9URVJNSU5PUy1ZLUNPTkRJQ0lPTkVTLURFLVVTTy1VU1VBUklPUy1XT01QSS5wZGYiLCJmaWxlX2hhc2giOiIzZGNkMGM5OGU3NGFhYjk3OTdjZmY3ODExNzMxZjc3YiIsImppdCI6IjE2MjM5NTIyMzYtNTAxMzciLCJleHAiOjE2MjM5NTU4MzZ9.wp_T_yvZCpvYVc69a5csMdBvxcNjsqfHAxFj0B9kOig",
+      "permalink": "https://wompi.co/wp-content/uploads/2019/09/TERMINOS-Y-CONDICIONES-DE-USO-USUARIOS-WOMPI.pdf",
+      "type": "END_USER_POLICY"
+    }
+  },
+  "meta": {}
+}
