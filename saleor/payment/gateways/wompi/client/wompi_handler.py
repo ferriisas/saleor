@@ -3,30 +3,9 @@ from typing import Dict
 
 import requests
 
-from .constants import HTTP_STATUS_CODE, WompiURL
+from .constants import *
 from .exceptions import WompiException, WompiTransactionException
 from .objects import AcceptanceTokenDAO, TransactionDAO
-
-
-class MethodType:
-    GET = "GET"
-    POST = "POST"
-
-
-class TransactionStates:
-    PENDING = "PENDING"
-    APPROVED = "APPROVED"
-    DECLINED = "DECLINED"
-    VOIDED = "VOIDED"
-    ERROR = "ERROR"
-
-
-class WOMPI_PAYMENT_METHODS:
-    CARD = "CARD"
-    NEQUI = "CARD"
-    PSE = "CARD"
-    CASH_AT_BBC = "CARD"
-    BANC_TRA_Button = "BANCOLOMBIA_COLLECT"
 
 
 class WompiHandler:
@@ -37,8 +16,8 @@ class WompiHandler:
     exception_class = WompiException
 
     def __init__(self, config):
-        self._key = config.get("key")
-        self._secret = config.get("secret")
+        self._key = config.get("public_key")
+        self._secret = config.get("private_key")
         self.sandbox = config.get("sandbox", True)
         self.authentication_required = True
         assert self._key != None, "Invalid key for Wompi"
@@ -117,8 +96,8 @@ class Transaction(WompiHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def generate_transaction(self, payload: Dict):
-        # TODO: moce to validate function.
+    def generate(self, payload: Dict) -> TransactionDAO:
+        # TODO: move to validate function.
         required_keys = [
             "acceptance_token",
             "amount_in_cents",
@@ -131,13 +110,13 @@ class Transaction(WompiHandler):
         self.payload = json.dumps(payload)
         return self.send_request()
 
-    def get_transaction(self, payment_id):
+    def retrieve(self, payment_id) -> TransactionDAO:
         self.path = "transactions/{}".format(payment_id)
         self.method_type = MethodType.GET
         self.authentication_required = False
         resp = super().send_request()
         return self.DAO(**resp.get("data"))
 
-    def send_request(self):
+    def send_request(self) -> TransactionDAO:
         resp = super().send_request()
         return self.DAO(**resp.get("data"))

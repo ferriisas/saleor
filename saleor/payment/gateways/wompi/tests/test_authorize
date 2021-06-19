@@ -1,0 +1,65 @@
+interactions:
+- request:
+    body: '{"acceptance_token": "eyJhbGciOiJIUzI1NiJ9.eyJjb250cmFjdF9pZCI6MSwicGVybWFsaW5rIjoiaHR0cHM6Ly93b21waS5jby93cC1jb250ZW50L3VwbG9hZHMvMjAxOS8wOS9URVJNSU5PUy1ZLUNPTkRJQ0lPTkVTLURFLVVTTy1VU1VBUklPUy1XT01QSS5wZGYiLCJmaWxlX2hhc2giOiIzZGNkMGM5OGU3NGFhYjk3OTdjZmY3ODExNzMxZjc3YiIsImppdCI6IjE2MjQxMjk4ODItNjI0NjMiLCJleHAiOjE2MjQxMzM0ODJ9.EKKUuCTBVDyz6AldPsecniX2H4EI9Yy3W989lRH6KQU",
+      "amount_in_cents": 424242, "currency": "COP", "customer_email": "test@example.com",
+      "reference": "UGF5bWVudDo2NQ==", "payment_method": {"type": "NEQUI", "phone_number":
+      "3107654321"}, "shipping_address": {"address_line_1": "T\u0119czowa 7", "address_line_2":
+      "T\u0119czowa 7", "country": "CO", "region": "Cundinamarca", "city": "Bogot\u00e1",
+      "name": "John Doe", "phone_number": "+48713988102", "postal_code": "111111"}}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Bearer prv_test_FueAlzPWjSb0S6Ni5ui4UNG64QbtoRWR
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '794'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.24.0
+    method: POST
+    uri: https://sandbox.wompi.co/v1/transactions
+  response:
+    body:
+      string: "{\"data\":{\"id\":\"110801-1624129886-76090\",\"created_at\":\"2021-06-19T19:11:26.608Z\",\"amount_in_cents\":424242,\"reference\":\"UGF5bWVudDo2NQ==\",\"customer_email\":\"test@example.com\",\"currency\":\"COP\",\"payment_method_type\":\"NEQUI\",\"payment_method\":{\"type\":\"NEQUI\",\"phone_number\":\"3107654321\"},\"status\":\"PENDING\",\"status_message\":null,\"shipping_address\":{\"address_line_1\":\"T\u0119czowa
+        7\",\"address_line_2\":\"T\u0119czowa 7\",\"country\":\"CO\",\"region\":\"Cundinamarca\",\"city\":\"Bogot\xE1\",\"name\":\"John
+        Doe\",\"phone_number\":\"+48713988102\",\"postal_code\":\"111111\"},\"redirect_url\":null,\"payment_source_id\":null,\"payment_link_id\":null,\"customer_data\":null,\"bill_id\":null,\"taxes\":[]},\"meta\":{}}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '656'
+      Content-Type:
+      - application/json
+      Date:
+      - Sat, 19 Jun 2021 19:11:26 GMT
+      Vary:
+      - Origin
+      Via:
+      - 1.1 vegur, 1.1 f08d6273dc5cb518c4c1c81c2bc6d723.cloudfront.net (CloudFront)
+      X-Amz-Cf-Id:
+      - X4NCnPzoSoFxtdOfBiZOu1bSLtzOhF7oQzchSlMpiiHDxULdgf098Q==
+      X-Amz-Cf-Pop:
+      - LHR62-C5
+      X-Cache:
+      - Miss from cloudfront
+      x-amz-apigw-id:
+      - BL8mwGK2IAMFZGA=
+      x-amzn-Remapped-Connection:
+      - keep-alive
+      x-amzn-Remapped-Content-Length:
+      - '656'
+      x-amzn-Remapped-Date:
+      - Sat, 19 Jun 2021 19:11:26 GMT
+      x-amzn-Remapped-Server:
+      - Cowboy
+      x-amzn-RequestId:
+      - f48fb4be-08ec-4e38-a136-fb340ac41467
+    status:
+      code: 201
+      message: Created
+version: 1

@@ -20,8 +20,8 @@ class TransactionDAO:
     reference: str
     currency: str
     payment_method_type: str
-    payment_method: dict
     status: str
+    payment_method: dict
     customer_email: str = None
     shipping_address: str = None
     payment_source_id: str = None
@@ -32,3 +32,13 @@ class TransactionDAO:
     def __init__(self, **kwargs):
         for _ in kwargs:
             setattr(self, _, kwargs[_])
+
+    @property
+    def vendor_transaction_id(self):
+        """
+        Returns the Payment Transaction Iof Wompi.
+        :return:
+        """
+        if self.payment_method:
+            extra = self.payment_method.get("extra", {})
+            return extra.get("transaction_id")

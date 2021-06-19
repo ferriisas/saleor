@@ -1,0 +1,33 @@
+{
+  "data": {
+    "id": "110801-1624095360-30588",
+    "created_at": "2021-06-19T09:36:00.208Z",
+    "amount_in_cents": 2500000,
+    "reference": "2322er3234ed4",
+    "currency": "COP",
+    "payment_method_type": "NEQUI",
+    "payment_method": {
+      "type": "NEQUI",
+      "extra": {
+        "transaction_id": "SANDBOX-1624095360IzzrDe",
+        "external_identifier": "1624095360vCDTIK"
+      },
+      "phone_number": "3991111111"
+    },
+    "redirect_url": null,
+    "status": "APPROVED",
+    "status_message": null,
+    "merchant": {
+      "name": "Ferrii",
+      "legal_name": "Luis Eduardo Duran Florez",
+      "contact_name": "Luis Eduardo Duran Florez",
+      "phone_number": "+573183573889",
+      "logo_url": null,
+      "legal_id_type": "CC",
+      "email": "luisovejo70@gmail.com",
+      "legal_id": "1114829629"
+    },
+    "taxes": []
+  },
+  "meta": {}
+}

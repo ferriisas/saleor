@@ -7,7 +7,6 @@ from . import (
     GatewayConfig,
     authorize,
     capture,
-    confirm,
     get_client_token,
     process_payment,
     refund,
