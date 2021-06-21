@@ -44,6 +44,7 @@ class WompiHandler:
         return headers
 
     def send_request(self):
+        breakpoint()
         headers = {"Content-Type": "application/json"}
         headers = self._append_authorization(headers)
         response = requests.request(

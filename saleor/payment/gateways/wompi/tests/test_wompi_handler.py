@@ -1,6 +1,7 @@
 import os
 from decimal import Decimal
 from math import isclose
+from unittest import mock
 from urllib.request import urlopen
 
 import pytest
@@ -12,6 +13,7 @@ from ....interface import AddressData, CustomerSource, GatewayConfig, PaymentMet
 from ....utils import create_payment_information
 from .. import TransactionKind, authorize, capture, get_client_token, refund, void
 from ..client.wompi_handler import AcceptanceToken
+from .common import *
 
 TRANSACTION_AMOUNT = Decimal(4242.42)
 TRANSACTION_REFUND_AMOUNT = Decimal(24.24)
@@ -72,24 +74,34 @@ def wompi_payment(payment_dummy):
 
 @pytest.fixture()
 def acceptancce_token(sandbox_gateway_config):
-    obj = AcceptanceToken(sandbox_gateway_config.connection_params)
-    token = obj.send_request()
-    return token.acceptance_token
+    with mock.patch(
+        "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
+    ) as mock_acceptance_token:
+        mock_acceptance_token.return_value = read_json("acceptance_token.json")
+        obj = AcceptanceToken(sandbox_gateway_config.connection_params)
+        token = obj.send_request()
+        return token.acceptance_token
 
 
 @pytest.mark.integration
 def test_authorize(sandbox_gateway_config, wompi_payment, address, acceptancce_token):
-    payment_info = create_payment_information(
-        wompi_payment,
-        PAYMENT_METHOD_CARD_SIMPLE,
-        additional_data={
-            "acceptance_token": acceptancce_token,
-            "payment_method": {"type": "NEQUI", "phone_number": "3991111111"},
-        },
-    )
-    payment_info.shipping = AddressData(**address.as_data())
-    response = authorize(payment_info, sandbox_gateway_config)
-    assert response.is_success is True
-    assert response.kind == TransactionKind.CAPTURE
-    assert isclose(response.amount, TRANSACTION_AMOUNT)
-    assert response.currency == TRANSACTION_CURRENCY
+    with mock.patch(
+        "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
+    ) as mock_create_transaction:
+        expected_resp = read_json("transaction.json")
+        expected_resp["data"]["amount_in_cents"] = TRANSACTION_AMOUNT * 100
+        mock_create_transaction.return_value = expected_resp
+        payment_info = create_payment_information(
+            wompi_payment,
+            PAYMENT_METHOD_CARD_SIMPLE,
+            additional_data={
+                "acceptance_token": acceptancce_token,
+                "payment_method": {"type": "NEQUI", "phone_number": "3991111111"},
+            },
+        )
+        payment_info.shipping = AddressData(**address.as_data())
+        response = authorize(payment_info, sandbox_gateway_config)
+        assert response.is_success is True
+        assert response.kind == TransactionKind.CAPTURE
+        assert isclose(response.amount, TRANSACTION_AMOUNT)
+        assert response.currency == TRANSACTION_CURRENCY

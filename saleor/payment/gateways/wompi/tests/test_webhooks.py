@@ -4,17 +4,7 @@ from unittest import mock
 import pytest
 
 from ..webhooks import generate_checksum, handle_webhook
-
-MOCK_RESPONSE_PATH = "saleor/payment/gateways/wompi/client/mock_responses"
-
-
-def _get_file_path(file_name):
-    return "{}/{}".format(MOCK_RESPONSE_PATH, file_name)
-
-
-def read_json(file_name):
-    with open(_get_file_path(file_name)) as f:
-        return json.load(f)
+from .common import *
 
 
 def test_checksum(wompi_plugin):
