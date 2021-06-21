@@ -82,7 +82,10 @@ def test_authorize(sandbox_gateway_config, wompi_payment, address, acceptancce_t
     payment_info = create_payment_information(
         wompi_payment,
         PAYMENT_METHOD_CARD_SIMPLE,
-        additional_data={"acceptance_token": acceptancce_token},
+        additional_data={
+            "acceptance_token": acceptancce_token,
+            "payment_method": {"type": "NEQUI", "phone_number": "3991111111"},
+        },
     )
     payment_info.shipping = AddressData(**address.as_data())
     response = authorize(payment_info, sandbox_gateway_config)

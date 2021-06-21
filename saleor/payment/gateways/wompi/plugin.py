@@ -1,5 +1,8 @@
 from typing import TYPE_CHECKING, List
 
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse, HttpResponseNotFound
+
 from saleor.plugins.base_plugin import BasePlugin, ConfigurationTypeField
 
 from ..utils import get_supported_currencies
@@ -12,9 +15,9 @@ from . import (
     refund,
     void,
 )
+from .webhooks import handle_webhook
 
-# from . import GatewayConfig
-
+WEBHOOK_PATH = "/webhooks"
 GATEWAY_NAME = "Wompi"
 
 if TYPE_CHECKING:
@@ -66,17 +69,6 @@ class WompiGatewayPlugin(BasePlugin):
             "help_text": "Determines if Saleor should use Wompi sandbox API.",
             "label": "Use sandbox",
         },
-        # "Store customers card": {
-        #     "type": ConfigurationTypeField.BOOLEAN,
-        #     "help_text": "Determines if Saleor should store cards on payments "
-        #                  "in Wompi customer.",
-        #     "label": "Store customers card",
-        # },
-        # "Automatic payment capture": {
-        #     "type": ConfigurationTypeField.BOOLEAN,
-        #     "help_text": "Determines if Saleor should automaticaly capture payments.",
-        #     "label": "Automatic payment capture",
-        # },
         "Supported currencies": {
             "type": ConfigurationTypeField.STRING,
             "help_text": "Determines currencies supported by gateway."
@@ -99,20 +91,39 @@ class WompiGatewayPlugin(BasePlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         configuration = {item["name"]: item["value"] for item in self.configuration}
-        self.config = GatewayConfig(
+        self.configuration_dict = configuration
+        self.sandbox_mode = kwargs.get("sandbox_mode") or configuration.get(
+            "Use sandbox", True
+        )
+        self.config = self.get_gateway_config()
+
+    @property
+    def _get_public_key(self):
+        _ = "Sandbox Public API key" if self.sandbox_mode else "Public API key"
+        return self.configuration_dict.get(_)
+
+    @property
+    def _get_private_key(self):
+        _ = "Sandbox Secret API key" if self.sandbox_mode else "Secret API key"
+        return self.configuration_dict.get(_)
+
+    def get_gateway_config(self):
+        return GatewayConfig(
             gateway_name=GATEWAY_NAME,
-            auto_capture=True,  #  configuration["Automatic payment capture"],
-            supported_currencies=configuration["Supported currencies"],
+            auto_capture=True,
+            supported_currencies=self.configuration_dict["Supported currencies"],
             connection_params={
-                "sandbox_mode": configuration["Use sandbox"],
-                "public_key": configuration["Public API key"],
-                "private_key": configuration["Secret API key"],
+                "sandbox_mode": self.sandbox_mode,
+                "public_key": self._get_public_key,
+                "private_key": self._get_private_key,
             },
-            store_customer=False,  # configuration["Store customers card"],
+            store_customer=False,
         )
 
-    def _get_gateway_config(self):
-        return self.config
+    def webhook(self, request: WSGIRequest, path: str, previous_value) -> HttpResponse:
+        if path.startswith(WEBHOOK_PATH):
+            return handle_webhook(request, self)
+        return HttpResponseNotFound()
 
     @require_active_plugin
     def authorize_payment(

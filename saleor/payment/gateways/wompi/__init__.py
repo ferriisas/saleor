@@ -25,7 +25,9 @@ def authorize(
             "currency": "COP",
             "customer_email": payment_information.customer_email,
             "reference": payment_information.graphql_payment_id,
-            "payment_method": {"type": "NEQUI", "phone_number": "3107654321"},
+            "payment_method": payment_information.data.get(
+                "payment_method"
+            ),  # {"type": "NEQUI", "phone_number": "3107654321"},
             "shipping_address": (
                 shipping_to_wompi_dict(payment_information.shipping)
                 if payment_information.shipping

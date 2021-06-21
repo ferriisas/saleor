@@ -25,6 +25,11 @@ class WOMPI_PAYMENT_METHODS:
     BANC_TRA_Button = "BANCOLOMBIA_COLLECT"
 
 
+class WebhookEvents:
+    TXN_UPDATE = "transaction.updated"
+    NEQI_UPDATE = "nequi_token.updated	"
+
+
 __all__ = [
     "HTTP_STATUS_CODE",
     "ERROR_CODE",
@@ -32,4 +37,5 @@ __all__ = [
     "MethodType",
     "TransactionStates",
     "WOMPI_PAYMENT_METHODS",
+    "WebhookEvents",
 ]
