@@ -1,8 +1,14 @@
 from dataclasses import dataclass
 
 
+@dataclass()
+class FinInstDAO:
+    financial_institution_code: str
+    financial_institution_name: str
+
+
 @dataclass(init=False)
-class CardInfo:
+class CardInfoDAO:
     id: str
     created_at: str
     brand: str

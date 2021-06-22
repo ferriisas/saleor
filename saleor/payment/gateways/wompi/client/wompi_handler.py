@@ -4,7 +4,7 @@ from typing import Dict
 import requests
 
 from .constants import *
-from .exceptions import WompiException, WompiTransactionException
+from .exceptions import *
 from .objects import *
 
 
@@ -14,7 +14,7 @@ class WompiHandler:
     url = ""
     path = ""
     payload = ""
-    exception_class = WompiException
+    exception_class = WompiUnknownException
 
     def __init__(self, config):
         self._key = config.get("public_key")
@@ -47,13 +47,17 @@ class WompiHandler:
     def send_request(self):
         headers = {"Content-Type": "application/json"}
         headers = self._append_authorization(headers)
-        response = requests.request(
-            self.method_type, self._get_url, headers=headers, data=self.payload
+        session = requests.Session()
+        response = getattr(session, self.method_type)(
+            self._get_url, headers=headers, data=self.payload
         )
         if response.status_code in HTTP_STATUS_CODE.OK_CODES:
+            session.close()
             return response.json()
         else:
-            raise self.exception_class(response.text)
+            raise HTTP_STATUS_EXCEPTION_MAPPING.get(
+                response.status_code, WompiUnknownException
+            )(response.text)
 
     def void_transaction(self, **kwargs):
         pass
@@ -69,7 +73,7 @@ class TokenizeCard(WompiHandler):
     path = "tokens/cards"
     method_type = MethodType.POST
     authentication_required = True
-    DAO = CardInfo
+    DAO = CardInfoDAO
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,6 +97,26 @@ class TokenizeCard(WompiHandler):
     def send_request(self):
         resp = super().send_request()
         return self.DAO(**resp.get("data"))
+
+
+class FinancialInstitutions(WompiHandler):
+    path = "pse/financial_institutions"
+    method_type = MethodType.GET
+    authentication_required = True
+    DAO = FinInstDAO
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _append_authorization(self, headers):
+        # For Card TOkenization, we need to authenticate with public key.
+        if self.authentication_required:
+            headers["Authorization"] = "Bearer {}".format(self._key)
+        return headers
+
+    def send_request(self):
+        resp = super().send_request()
+        return [self.DAO(**row) for row in resp.get("data")]
 
 
 class AcceptanceToken(WompiHandler):
@@ -139,6 +163,10 @@ class Transaction(WompiHandler):
         if not set(required_keys).issubset(set(payload.keys())):
             raise self.exception_class("Required keys are not provided ")
         self.payload = json.dumps(payload)
+        return self.send_request()
+
+    def void(self, payment_id) -> TransactionDAO:
+        self.path = "transactions/{}/void".format(payment_id)
         return self.send_request()
 
     def retrieve(self, payment_id) -> TransactionDAO:

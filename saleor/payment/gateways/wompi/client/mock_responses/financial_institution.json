@@ -1,0 +1,17 @@
+{
+  "data": [
+    {
+      "financial_institution_code": "1",
+      "financial_institution_name": "Banco que aprueba"
+    },
+    {
+      "financial_institution_code": "2",
+      "financial_institution_name": "Banco que declina"
+    },
+    {
+      "financial_institution_code": "3",
+      "financial_institution_name": "Banco que simula un error"
+    }
+  ],
+  "meta": {}
+}

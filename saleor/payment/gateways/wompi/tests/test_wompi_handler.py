@@ -12,19 +12,13 @@ from .... import ChargeStatus
 from ....interface import AddressData, CustomerSource, GatewayConfig, PaymentMethodInfo
 from ....utils import create_payment_information
 from .. import TransactionKind, authorize, capture, get_client_token, refund, void
-from ..client.wompi_handler import AcceptanceToken, TokenizeCard
+from ..client.wompi_handler import *
 from .common import *
 
 TRANSACTION_AMOUNT = Decimal(4242.42)
 TRANSACTION_REFUND_AMOUNT = Decimal(24.24)
 TRANSACTION_CURRENCY = "COP"
-PAYMENT_METHOD_CARD_SIMPLE = "pm_card_pl"
-CARD_SIMPLE_DETAILS = PaymentMethodInfo(
-    last_4="0005", exp_year=2020, exp_month=8, brand="visa", type="card"
-)
-PAYMENT_METHOD_CARD_3D_SECURE = "pm_card_threeDSecure2Required"
 
-# Set to True if recording new cassette with sandbox using credentials in env
 RECORD = True
 
 
@@ -99,9 +93,41 @@ def test_tokenize_card(sandbox_gateway_config):
         mock_tokenize_card.return_value = expected_resp
         obj = TokenizeCard(sandbox_gateway_config.connection_params)
         token = obj.tokenize_card(payload)
+        assert f"Bearer {sandbox_gateway_config.connection_params['public_key']}" == obj._append_authorization(
+            {}
+        ).get(
+            "Authorization"
+        )
         assert expected_resp["data"]["id"] == token.id
         assert expected_resp["data"]["brand"] == token.brand
         assert expected_resp["data"]["card_holder"] == token.card_holder
+
+
+@pytest.mark.integration
+def test_get_financial_inst(sandbox_gateway_config):
+    with mock.patch(
+        "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
+    ) as mock_fin_ins:
+        expected_resp = read_json("financial_institution.json")
+        mock_fin_ins.return_value = expected_resp
+        obj = FinancialInstitutions(sandbox_gateway_config.connection_params)
+        response = obj.send_request()
+
+        assert f"Bearer {sandbox_gateway_config.connection_params['public_key']}" == obj._append_authorization(
+            {}
+        ).get(
+            "Authorization"
+        )
+        assert len(expected_resp["data"]) == len(response)
+
+        assert (
+            expected_resp["data"][0]["financial_institution_code"]
+            == response[0].financial_institution_code
+        )
+        assert (
+            expected_resp["data"][0]["financial_institution_name"]
+            == response[0].financial_institution_name
+        )
 
 
 @pytest.mark.integration
@@ -114,7 +140,7 @@ def test_authorize(sandbox_gateway_config, wompi_payment, address, acceptance_to
         mock_create_transaction.return_value = expected_resp
         payment_info = create_payment_information(
             wompi_payment,
-            PAYMENT_METHOD_CARD_SIMPLE,
+            "test",
             additional_data={
                 "acceptance_token": acceptance_token,
                 "payment_method": {"type": "NEQUI", "phone_number": "3991111111"},

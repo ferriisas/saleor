@@ -4,8 +4,8 @@ from .url import WompiURL
 
 
 class MethodType:
-    GET = "GET"
-    POST = "POST"
+    GET = "get"
+    POST = "post"
 
 
 class TransactionStates:
