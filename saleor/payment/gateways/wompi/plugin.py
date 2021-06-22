@@ -165,16 +165,16 @@ class WompiGatewayPlugin(BasePlugin):
 
     @require_active_plugin
     def get_client_token(self, token_config: "TokenConfig", previous_value):
-        return get_client_token(self._get_gateway_config(), token_config)
+        return get_client_token(self.get_gateway_config(), token_config)
 
     @require_active_plugin
     def get_supported_currencies(self, previous_value):
-        config = self._get_gateway_config()
+        config = self.get_gateway_config()
         return get_supported_currencies(config, GATEWAY_NAME)
 
     @require_active_plugin
     def get_payment_config(self, previous_value):
-        config = self._get_gateway_config()
+        config = self.get_gateway_config()
         return [
             {"field": "api_key", "value": config.connection_params["public_key"]},
             {"field": "store_customer_card", "value": config.store_customer},

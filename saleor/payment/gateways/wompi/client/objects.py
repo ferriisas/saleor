@@ -2,6 +2,24 @@ from dataclasses import dataclass
 
 
 @dataclass(init=False)
+class CardInfo:
+    id: str
+    created_at: str
+    brand: str
+    name: str
+    last_four: str
+    bin: str
+    exp_year: str
+    exp_month: str
+    card_holder: str
+    expires_at: str
+
+    def __init__(self, **kwargs):
+        for _ in kwargs:
+            setattr(self, _, kwargs[_])
+
+
+@dataclass(init=False)
 class AcceptanceTokenDAO:
     acceptance_token: str
     permalink: str

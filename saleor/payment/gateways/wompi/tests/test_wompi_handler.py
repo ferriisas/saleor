@@ -12,7 +12,7 @@ from .... import ChargeStatus
 from ....interface import AddressData, CustomerSource, GatewayConfig, PaymentMethodInfo
 from ....utils import create_payment_information
 from .. import TransactionKind, authorize, capture, get_client_token, refund, void
-from ..client.wompi_handler import AcceptanceToken
+from ..client.wompi_handler import AcceptanceToken, TokenizeCard
 from .common import *
 
 TRANSACTION_AMOUNT = Decimal(4242.42)
@@ -72,8 +72,8 @@ def wompi_payment(payment_dummy):
     return payment_dummy
 
 
-@pytest.fixture()
-def acceptancce_token(sandbox_gateway_config):
+@pytest.fixture
+def acceptance_token(sandbox_gateway_config):
     with mock.patch(
         "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
     ) as mock_acceptance_token:
@@ -84,7 +84,28 @@ def acceptancce_token(sandbox_gateway_config):
 
 
 @pytest.mark.integration
-def test_authorize(sandbox_gateway_config, wompi_payment, address, acceptancce_token):
+def test_tokenize_card(sandbox_gateway_config):
+    with mock.patch(
+        "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
+    ) as mock_tokenize_card:
+        payload = {
+            "number": "4242424242424242",
+            "cvc": "123",
+            "exp_month": "08",
+            "exp_year": "28",
+            "card_holder": "José Pérez",
+        }
+        expected_resp = read_json("tokenize_card.json")
+        mock_tokenize_card.return_value = expected_resp
+        obj = TokenizeCard(sandbox_gateway_config.connection_params)
+        token = obj.tokenize_card(payload)
+        assert expected_resp["data"]["id"] == token.id
+        assert expected_resp["data"]["brand"] == token.brand
+        assert expected_resp["data"]["card_holder"] == token.card_holder
+
+
+@pytest.mark.integration
+def test_authorize(sandbox_gateway_config, wompi_payment, address, acceptance_token):
     with mock.patch(
         "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
     ) as mock_create_transaction:
@@ -95,7 +116,7 @@ def test_authorize(sandbox_gateway_config, wompi_payment, address, acceptancce_t
             wompi_payment,
             PAYMENT_METHOD_CARD_SIMPLE,
             additional_data={
-                "acceptance_token": acceptancce_token,
+                "acceptance_token": acceptance_token,
                 "payment_method": {"type": "NEQUI", "phone_number": "3991111111"},
             },
         )
