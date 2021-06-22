@@ -5,7 +5,7 @@ import uuid
 
 from ... import TransactionKind
 from ...interface import GatewayConfig, GatewayResponse, PaymentData, PaymentMethodInfo
-from .client.wompi_handler import Transaction, TransactionStates, WompiHandler
+from .client.wompi_handler import TransactionRequest, TransactionStates, WompiHandler
 from .utils import get_amount_for_wompi, get_amount_from_wompi, shipping_to_wompi_dict
 
 
@@ -35,7 +35,7 @@ def authorize(
             ),
         }
         conf = config.connection_params
-        tran_obj = Transaction(conf)
+        tran_obj = TransactionRequest(conf)
         gateway_resp = tran_obj.generate(payload)
         response = _success_response(gateway_resp, kind=kind, success=True)
     except Exception as exc:
@@ -53,7 +53,7 @@ def process_payment(
 def capture(payment_information: PaymentData, config: GatewayConfig) -> GatewayResponse:
     try:
         conf = config.connection_params
-        tran_obj = Transaction(conf)
+        tran_obj = TransactionRequest(conf)
         response = tran_obj.retrieve(payment_information.token)
         return _success_response(
             response,

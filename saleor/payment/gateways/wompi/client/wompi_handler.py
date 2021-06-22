@@ -69,7 +69,7 @@ class WompiHandler:
         pass
 
 
-class TokenizeCard(WompiHandler):
+class TokenizeCardRequest(WompiHandler):
     path = "tokens/cards"
     method_type = MethodType.POST
     authentication_required = True
@@ -99,7 +99,7 @@ class TokenizeCard(WompiHandler):
         return self.DAO(**resp.get("data"))
 
 
-class FinancialInstitutions(WompiHandler):
+class FinancialInstitutionsRequest(WompiHandler):
     path = "pse/financial_institutions"
     method_type = MethodType.GET
     authentication_required = True
@@ -119,7 +119,7 @@ class FinancialInstitutions(WompiHandler):
         return [self.DAO(**row) for row in resp.get("data")]
 
 
-class AcceptanceToken(WompiHandler):
+class AcceptanceTokenRequest(WompiHandler):
     path = "merchants/{key}"
     method_type = MethodType.GET
     authentication_required = False
@@ -137,7 +137,7 @@ class AcceptanceToken(WompiHandler):
         return self.DAO(**resp.get("data"))
 
 
-class Transaction(WompiHandler):
+class TransactionRequest(WompiHandler):
     path = "transactions"
     method_type = MethodType.POST
     authentication_required = True
@@ -167,6 +167,7 @@ class Transaction(WompiHandler):
 
     def void(self, payment_id) -> TransactionDAO:
         self.path = "transactions/{}/void".format(payment_id)
+        self.authentication_required = True
         return self.send_request()
 
     def retrieve(self, payment_id) -> TransactionDAO:

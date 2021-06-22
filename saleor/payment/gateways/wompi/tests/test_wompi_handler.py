@@ -19,8 +19,6 @@ TRANSACTION_AMOUNT = Decimal(4242.42)
 TRANSACTION_REFUND_AMOUNT = Decimal(24.24)
 TRANSACTION_CURRENCY = "COP"
 
-RECORD = True
-
 
 @pytest.fixture()
 def gateway_config():
@@ -38,13 +36,12 @@ def gateway_config():
 
 @pytest.fixture()
 def sandbox_gateway_config(gateway_config):
-    if RECORD:
-        connection_params = {
-            "public_key": os.environ.get("WOMPI_PUBLIC_KEY"),
-            "private_key": os.environ.get("WOMPI_SECRET_KEY"),
-            "event_key": "test_event_key",
-        }
-        gateway_config.connection_params.update(connection_params)
+    connection_params = {
+        "public_key": "test_public_key",
+        "private_key": "test_private_key",
+        "event_key": "test_event_key",
+    }
+    gateway_config.connection_params.update(connection_params)
     return gateway_config
 
 
@@ -77,7 +74,7 @@ def acceptance_token(sandbox_gateway_config):
         "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
     ) as mock_acceptance_token:
         mock_acceptance_token.return_value = read_json("acceptance_token.json")
-        obj = AcceptanceToken(sandbox_gateway_config.connection_params)
+        obj = AcceptanceTokenRequest(sandbox_gateway_config.connection_params)
         token = obj.send_request()
         return token.acceptance_token
 
@@ -96,7 +93,7 @@ def test_tokenize_card(sandbox_gateway_config):
         }
         expected_resp = read_json("tokenize_card.json")
         mock_tokenize_card.return_value = expected_resp
-        obj = TokenizeCard(sandbox_gateway_config.connection_params)
+        obj = TokenizeCardRequest(sandbox_gateway_config.connection_params)
         token = obj.tokenize_card(payload)
         assert f"Bearer {sandbox_gateway_config.connection_params['public_key']}" == obj._append_authorization(
             {}
@@ -115,7 +112,7 @@ def test_get_financial_inst(sandbox_gateway_config):
     ) as mock_fin_ins:
         expected_resp = read_json("financial_institution.json")
         mock_fin_ins.return_value = expected_resp
-        obj = FinancialInstitutions(sandbox_gateway_config.connection_params)
+        obj = FinancialInstitutionsRequest(sandbox_gateway_config.connection_params)
         response = obj.send_request()
 
         assert f"Bearer {sandbox_gateway_config.connection_params['public_key']}" == obj._append_authorization(
@@ -133,6 +130,63 @@ def test_get_financial_inst(sandbox_gateway_config):
             expected_resp["data"][0]["financial_institution_name"]
             == response[0].financial_institution_name
         )
+
+
+@pytest.mark.integration
+def test_generate_transaction(sandbox_gateway_config):
+    with mock.patch(
+        "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
+    ) as mock_transaction:
+        expected_resp = read_json("transaction.json")
+        mock_transaction.return_value = expected_resp
+        payload = {
+            "acceptance_token": "random_123",
+            "amount_in_cents": 2500000,
+            "currency": "COP",
+            "customer_email": "pepito_perez@example.com",
+            "reference": "22234ed4",
+            "payment_method": {
+                "type": "NEQUI",
+                "phone_number": "3991111111",  # Success
+            },
+        }
+        obj = TransactionRequest(sandbox_gateway_config.connection_params)
+        response = obj.generate(payload)
+        assert f"Bearer {sandbox_gateway_config.connection_params['private_key']}" == obj._append_authorization(
+            {}
+        ).get(
+            "Authorization"
+        )
+        assert TransactionDAO(**expected_resp["data"]) == response
+
+
+@pytest.mark.integration
+def test_get_transaction(sandbox_gateway_config):
+    with mock.patch(
+        "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
+    ) as mock_transaction:
+        expected_resp = read_json("transaction.json")
+        mock_transaction.return_value = expected_resp
+        obj = TransactionRequest(sandbox_gateway_config.connection_params)
+        response = obj.retrieve(expected_resp["data"]["id"])
+        assert TransactionDAO(**expected_resp["data"]) == response
+
+
+@pytest.mark.integration
+def test_void_transaction(sandbox_gateway_config):
+    with mock.patch(
+        "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
+    ) as mock_transaction:
+        expected_resp = read_json("transaction.json")
+        mock_transaction.return_value = expected_resp
+        obj = TransactionRequest(sandbox_gateway_config.connection_params)
+        response = obj.void(expected_resp["data"]["id"])
+        assert f"Bearer {sandbox_gateway_config.connection_params['private_key']}" == obj._append_authorization(
+            {}
+        ).get(
+            "Authorization"
+        )
+        assert TransactionDAO(**expected_resp["data"]) == response
 
 
 @pytest.mark.integration
