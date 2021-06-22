@@ -54,6 +54,11 @@ class WompiGatewayPlugin(BasePlugin):
             "help_text": "Provide Wompi sandbox secret API key.",
             "label": "Sandbox Secret API key",
         },
+        "Sandbox Event API key": {
+            "type": ConfigurationTypeField.SECRET,
+            "help_text": "Provide Wompi sandbox event API key.",
+            "label": "Sandbox Secret API key",
+        },
         "Public API key": {
             "type": ConfigurationTypeField.SECRET,
             "help_text": "Provide Wompi public API key.",
@@ -62,6 +67,11 @@ class WompiGatewayPlugin(BasePlugin):
         "Secret API key": {
             "type": ConfigurationTypeField.SECRET,
             "help_text": "Provide Wompi secret API key.",
+            "label": "Secret API key",
+        },
+        "Event API key": {
+            "type": ConfigurationTypeField.SECRET,
+            "help_text": "Provide Wompi event API key.",
             "label": "Secret API key",
         },
         "Use sandbox": {
@@ -79,8 +89,10 @@ class WompiGatewayPlugin(BasePlugin):
     DEFAULT_CONFIGURATION = [
         {"name": "Sandbox Public API key", "value": None},
         {"name": "Sandbox Secret API key", "value": None},
+        {"name": "Sandbox Event API key", "value": None},
         {"name": "Public API key", "value": None},
         {"name": "Secret API key", "value": None},
+        {"name": "Event API key", "value": None},
         {"name": "Use sandbox", "value": True},
         {"name": "Store customers card", "value": False},
         {"name": "Automatic payment capture", "value": True},
@@ -107,6 +119,11 @@ class WompiGatewayPlugin(BasePlugin):
         _ = "Sandbox Secret API key" if self.sandbox_mode else "Secret API key"
         return self.configuration_dict.get(_)
 
+    @property
+    def _get_event_key(self):
+        _ = "Sandbox Event API key" if self.sandbox_mode else "Event API key"
+        return self.configuration_dict.get(_)
+
     def get_gateway_config(self):
         return GatewayConfig(
             gateway_name=GATEWAY_NAME,
@@ -116,6 +133,7 @@ class WompiGatewayPlugin(BasePlugin):
                 "sandbox_mode": self.sandbox_mode,
                 "public_key": self._get_public_key,
                 "private_key": self._get_private_key,
+                "event_key": self._get_event_key,
             },
             store_customer=False,
         )

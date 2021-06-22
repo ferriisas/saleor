@@ -8,7 +8,7 @@ from .common import *
 
 
 def test_checksum(wompi_plugin):
-    plugin = wompi_plugin(is_sandbox=True, api_secret="test123")
+    plugin = wompi_plugin(is_sandbox=True, api_event="test123")
     expected_value = "125d467a792c701c59c7967e7207624c9fa563e68a302c85eb642a4ebab85890"
     request_data = read_json("transaction_webhook.json")
     request_data["data"]["transaction"]["id"] = "testId"

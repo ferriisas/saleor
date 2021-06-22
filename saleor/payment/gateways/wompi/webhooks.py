@@ -26,7 +26,7 @@ def generate_checksum(data, config: GatewayConfig):
         txn.get("status"),
         txn.get("amount_in_cents"),
         data.get("timestamp"),
-        config.connection_params.get("private_key"),
+        config.connection_params.get("event_key"),
     )
     return hashlib.sha256(checksum_str.encode("utf-8")).hexdigest()
 

@@ -28,7 +28,11 @@ def gateway_config():
         gateway_name="Wompi",
         auto_capture=True,
         supported_currencies="COP",
-        connection_params={"public_key": "public", "private_key": "secret",},
+        connection_params={
+            "public_key": "public",
+            "private_key": "secret",
+            "event_key": "event_key",
+        },
     )
 
 
@@ -38,6 +42,7 @@ def sandbox_gateway_config(gateway_config):
         connection_params = {
             "public_key": os.environ.get("WOMPI_PUBLIC_KEY"),
             "private_key": os.environ.get("WOMPI_SECRET_KEY"),
+            "event_key": "test_event_key",
         }
         gateway_config.connection_params.update(connection_params)
     return gateway_config
