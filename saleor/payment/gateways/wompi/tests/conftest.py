@@ -2,7 +2,11 @@ from unittest import mock
 
 import pytest
 
+from .....checkout import calculations
 from .....plugins.manager import get_plugins_manager
+from .... import TransactionKind
+from ....models import Checkout, Transaction
+from ....utils import create_payment
 from ..plugin import WompiGatewayPlugin
 
 
@@ -40,3 +44,46 @@ def wompi_plugin(settings):
         return manager.plugins[0]
 
     return fun
+
+
+@pytest.fixture
+def payment_wompi_for_checkout(checkout_with_items, address, shipping_method):
+    checkout_with_items.billing_address = address
+    checkout_with_items.shipping_address = address
+    checkout_with_items.shipping_method = shipping_method
+    checkout_with_items.save()
+    total = calculations.calculate_checkout_total_with_gift_cards(
+        checkout=checkout_with_items
+    )
+    payment = create_payment(
+        gateway=WompiGatewayPlugin.PLUGIN_ID,
+        payment_token="",
+        total=total.gross.amount,
+        currency=checkout_with_items.currency,
+        email=checkout_with_items.email,
+        customer_ip_address="",
+        checkout=checkout_with_items,
+        return_url="https://www.example.com",
+    )
+    return payment
+
+
+@pytest.fixture
+def payment_wompi_for_order(payment_wompi_for_checkout, order_with_lines):
+    payment_wompi_for_checkout.checkout = None
+    payment_wompi_for_checkout.order = order_with_lines
+    payment_wompi_for_checkout.save()
+
+    Transaction.objects.create(
+        payment=payment_wompi_for_checkout,
+        action_required=False,
+        kind=TransactionKind.AUTH,
+        token="token",
+        is_success=True,
+        amount=order_with_lines.total_gross_amount,
+        currency=order_with_lines.currency,
+        error="",
+        gateway_response={},
+        action_required_data={},
+    )
+    return payment_wompi_for_checkout

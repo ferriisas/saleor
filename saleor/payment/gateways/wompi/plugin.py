@@ -57,7 +57,7 @@ class WompiGatewayPlugin(BasePlugin):
         "Sandbox Event API key": {
             "type": ConfigurationTypeField.SECRET,
             "help_text": "Provide Wompi sandbox event API key.",
-            "label": "Sandbox Secret API key",
+            "label": "Sandbox Event API key",
         },
         "Public API key": {
             "type": ConfigurationTypeField.SECRET,
@@ -72,7 +72,7 @@ class WompiGatewayPlugin(BasePlugin):
         "Event API key": {
             "type": ConfigurationTypeField.SECRET,
             "help_text": "Provide Wompi event API key.",
-            "label": "Secret API key",
+            "label": "Event API key",
         },
         "Use sandbox": {
             "type": ConfigurationTypeField.BOOLEAN,
@@ -123,6 +123,9 @@ class WompiGatewayPlugin(BasePlugin):
     def _get_event_key(self):
         _ = "Sandbox Event API key" if self.sandbox_mode else "Event API key"
         return self.configuration_dict.get(_)
+
+    def _get_gateway_config(self) -> GatewayConfig:
+        return self.get_gateway_config()
 
     def get_gateway_config(self):
         return GatewayConfig(

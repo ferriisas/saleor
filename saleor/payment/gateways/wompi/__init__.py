@@ -22,12 +22,10 @@ def authorize(
         payload = {
             "acceptance_token": payment_information.data.get("acceptance_token"),
             "amount_in_cents": amount,
-            "currency": "COP",
+            "currency": payment_information.currency,
             "customer_email": payment_information.customer_email,
             "reference": payment_information.graphql_payment_id,
-            "payment_method": payment_information.data.get(
-                "payment_method"
-            ),  # {"type": "NEQUI", "phone_number": "3107654321"},
+            "payment_method": payment_information.data.get("paymentMethod"),
             "shipping_address": (
                 shipping_to_wompi_dict(payment_information.shipping)
                 if payment_information.shipping
@@ -40,7 +38,6 @@ def authorize(
         response = _success_response(gateway_resp, kind=kind, success=True)
     except Exception as exc:
         response = _error_response(kind, exc, payment_information)
-
     return response
 
 

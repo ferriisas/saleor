@@ -1,6 +1,5 @@
 CC_PAYMENT_METHOD = {
     "type": "CARD",
-    "installments": 2,
     "token": "tok_prod_1_BBb749EAB32e97a2D058Dd538a608301",
 }
 
@@ -10,12 +9,13 @@ BCOL_PAYMENT_METHOD = {
     "payment_description": "Pago a Tienda Wompi",
     "sandbox_status": "APPROVED",
 }
-
 NEQI_PAYMENT_METHOD = {
     "type": "NEQUI",
     "phone_number": "3991111111"  # Success
     # "phone_number": "3992222222" # Error
 }
+
+
 FIN_INST_PAYMENT_METHOD = {
     "type": "PSE",
     "user_type": 0,
@@ -35,11 +35,11 @@ VARIOUS_METHODS = [
     FIN_INST_PAYMENT_METHOD,
     CASH_PAYMENT_METHOD,
 ]
-
+PAYMENT_DATA = {"acceptance_token": "", "payment_method": "VARIOUS_METHODS"}
 
 PAYMENT_DATA = {
     "acceptance_token": "",
-    "amount_in_cents": 2500000,
+    "amount": 2500000,
     "currency": "COP",
     "customer_email": "pepito_perez@example.com",
     "reference": "2322er3234ed4",
