@@ -1,4 +1,4 @@
-from .constants import HTTP_STATUS_CODE
+from .http_status_code import *
 
 
 class WompiTransactionException(Exception):

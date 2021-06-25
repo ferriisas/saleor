@@ -4,7 +4,6 @@ from typing import Dict
 import requests
 
 from .constants import *
-from .exceptions import *
 from .objects import *
 
 
@@ -58,15 +57,6 @@ class WompiHandler:
             raise HTTP_STATUS_EXCEPTION_MAPPING.get(
                 response.status_code, WompiUnknownException
             )(response.text)
-
-    def void_transaction(self, **kwargs):
-        pass
-
-    def refund(self, **kwargs):
-        pass
-
-    def process_payment(self, **kwargs):
-        pass
 
 
 class TokenizeCardRequest(WompiHandler):
