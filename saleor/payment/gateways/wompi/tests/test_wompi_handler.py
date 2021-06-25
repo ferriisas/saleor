@@ -133,7 +133,8 @@ def test_get_financial_inst(sandbox_gateway_config):
 
 
 @pytest.mark.integration
-def test_generate_transaction(sandbox_gateway_config):
+@pytest.mark.parametrize("payment_method", VARIOUS_METHODS)
+def test_generate_transaction_with_validation(payment_method, sandbox_gateway_config):
     with mock.patch(
         "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
     ) as mock_transaction:
@@ -145,10 +146,7 @@ def test_generate_transaction(sandbox_gateway_config):
             "currency": "COP",
             "customer_email": "pepito_perez@example.com",
             "reference": "22234ed4",
-            "payment_method": {
-                "type": "NEQUI",
-                "phone_number": "3991111111",  # Success
-            },
+            "payment_method": payment_method,
         }
         obj = TransactionRequest(sandbox_gateway_config.connection_params)
         response = obj.generate(payload)
@@ -158,6 +156,16 @@ def test_generate_transaction(sandbox_gateway_config):
             "Authorization"
         )
         assert TransactionDAO(**expected_resp["data"]) == response
+
+        with pytest.raises(TransactionRequest.exception_class) as execinfo:
+            incomplete_payment_data = payload.copy()
+            missing_key_name = "acceptance_token"
+            del incomplete_payment_data[missing_key_name]
+            obj = TransactionRequest(sandbox_gateway_config.connection_params)
+            obj.generate(incomplete_payment_data)
+        assert (
+            missing_key_name in execinfo.value.args[0]
+        ), f"{missing_key_name} not found in exception info."
 
 
 @pytest.mark.integration

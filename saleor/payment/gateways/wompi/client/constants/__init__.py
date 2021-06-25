@@ -34,6 +34,10 @@ class WOMPI_PAYMENT_METHODS:
 
     # Option which define current active payment method for Wompi.
     ACTIVE_PAYMENTS = [CARD, BANC_TRA_Button, NEQUI, PSE, BANCOLOMBIA_COLLECT]
+
+    #
+    ALLOWED_TYPE_REFUND = [CARD]
+
     REQUIRED_FIELDS = {
         CARD: ["type", "token"],
         BANC_TRA_Button: ["type", "user_type", "payment_description"],

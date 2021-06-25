@@ -18,6 +18,10 @@ def authorize(
 ) -> GatewayResponse:
     amount = get_amount_for_wompi(payment_information.amount)
     kind = TransactionKind.CAPTURE if config.auto_capture else TransactionKind.AUTH
+    # Accept data in both keys: payment_method or paymentMethod
+    payment_method = payment_information.data.get(
+        "payment_method"
+    ) or payment_information.data.get("paymentMethod")
     try:
         payload = {
             "acceptance_token": payment_information.data.get("acceptance_token"),
@@ -25,7 +29,7 @@ def authorize(
             "currency": payment_information.currency,
             "customer_email": payment_information.customer_email,
             "reference": payment_information.graphql_payment_id,
-            "payment_method": payment_information.data.get("paymentMethod"),
+            "payment_method": payment_method,
             "shipping_address": (
                 shipping_to_wompi_dict(payment_information.shipping)
                 if payment_information.shipping
@@ -71,6 +75,7 @@ def refund(payment_information: PaymentData, config: GatewayConfig) -> GatewayRe
 
 
 def void(payment_information: PaymentData, config: GatewayConfig) -> GatewayResponse:
+    # TODO: Add Validation. Check if TYPE is allowed for Refund. WOMPI_PAYMENT_METHODS.ALLOWED_TYPE_REFUND
     return _error_response(
         TransactionKind.REFUND,
         Exception("Refund Not supported by WOMPI."),

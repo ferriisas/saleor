@@ -20,7 +20,7 @@ def test_process_payment(
         payment_info = create_payment_information(
             payment_wompi_for_checkout,
             additional_data={
-                "paymentMethod": payment_method_data,
+                "payment_method": payment_method_data,
                 "acceptance_token": "test_token",
             },
         )

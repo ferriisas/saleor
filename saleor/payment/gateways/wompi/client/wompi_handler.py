@@ -43,12 +43,12 @@ class WompiHandler:
 
         return headers
 
-    def send_request(self):
+    def send_request(self, **kwargs):
         headers = {"Content-Type": "application/json"}
         headers = self._append_authorization(headers)
         session = requests.Session()
         response = getattr(session, self.method_type)(
-            self._get_url, headers=headers, data=self.payload
+            self._get_url, headers=headers, data=kwargs.get("payload")
         )
         if response.status_code in HTTP_STATUS_CODE.OK_CODES:
             session.close()
@@ -82,10 +82,10 @@ class TokenizeCardRequest(WompiHandler):
             )
 
         self.payload = json.dumps(payload)
-        return self.send_request()
+        return self.send_request(payload=self.payload)
 
-    def send_request(self):
-        resp = super().send_request()
+    def send_request(self, **kwargs):
+        resp = super().send_request(**kwargs)
         return self.DAO(**resp.get("data"))
 
 
@@ -133,6 +133,13 @@ class TransactionRequest(WompiHandler):
     authentication_required = True
     DAO = TransactionDAO
     exception_class = WompiTransactionException
+    required_transactin_keys = [
+        "acceptance_token",
+        "amount_in_cents",
+        "customer_email",
+        "reference",
+        "payment_method",
+    ]
 
     @property
     def _get_url(self):
@@ -141,22 +148,24 @@ class TransactionRequest(WompiHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def generate(self, payload: Dict) -> TransactionDAO:
-        # TODO: move to validate function.
-        required_keys = [
-            "acceptance_token",
-            "amount_in_cents",
-            "customer_email",
-            "reference",
-            "payment_method",
-        ]
+    def validate_transaction_data(self, payload):
+        required_keys = self.required_transactin_keys
         if not set(required_keys).issubset(set(payload.keys())):
-            raise self.exception_class("Required keys are not provided ")
+            missing_key = set(required_keys) - set(payload.keys())
+            raise self.exception_class(
+                f"Required keys are not provided: {', '.join(missing_key)}"
+            )
+        WOMPI_PAYMENT_METHODS.is_valid_payment_data(payload.get("payment_method"))
+
+    def generate(self, payload: Dict) -> TransactionDAO:
+        self.method_type = MethodType.POST
+        self.validate_transaction_data(payload)
         self.payload = json.dumps(payload)
-        return self.send_request()
+        return self.send_request(payload=self.payload)
 
     def void(self, payment_id) -> TransactionDAO:
         self.path = "transactions/{}/void".format(payment_id)
+        self.method_type = MethodType.POST
         self.authentication_required = True
         return self.send_request()
 
@@ -167,6 +176,6 @@ class TransactionRequest(WompiHandler):
         resp = super().send_request()
         return self.DAO(**resp.get("data"))
 
-    def send_request(self) -> TransactionDAO:
-        resp = super().send_request()
+    def send_request(self, **kwargs) -> TransactionDAO:
+        resp = super().send_request(**kwargs)
         return self.DAO(**resp.get("data"))
