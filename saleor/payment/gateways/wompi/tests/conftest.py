@@ -2,12 +2,15 @@ from unittest import mock
 
 import pytest
 
+from .....account.models import Address
 from .....checkout import calculations
 from .....plugins.manager import get_plugins_manager
 from .... import TransactionKind
+from ....interface import GatewayConfig
 from ....models import Checkout, Transaction
 from ....utils import create_payment
 from ..plugin import WompiGatewayPlugin
+from .common import *
 
 
 @pytest.fixture
@@ -87,3 +90,57 @@ def payment_wompi_for_order(payment_wompi_for_checkout, order_with_lines):
         action_required_data={},
     )
     return payment_wompi_for_checkout
+
+
+@pytest.fixture()
+def gateway_config():
+    return GatewayConfig(
+        gateway_name="Wompi",
+        auto_capture=True,
+        supported_currencies="COP",
+        connection_params={
+            "public_key": "public",
+            "private_key": "secret",
+            "event_key": "event_key",
+        },
+    )
+
+
+@pytest.fixture()
+def sandbox_gateway_config(gateway_config):
+    connection_params = {
+        "public_key": "test_public_key",
+        "private_key": "test_private_key",
+        "event_key": "test_event_key",
+    }
+    gateway_config.connection_params.update(connection_params)
+    return gateway_config
+
+
+@pytest.fixture
+def wompi_address(db):  # pylint: disable=W0613
+    return Address.objects.create(
+        first_name="John",
+        last_name="Doe",
+        company_name="Mirumee Software",
+        street_address_1="Tęczowa 7",
+        street_address_2="Tęczowa 7",
+        city="Bogotá",
+        city_area="Cundinamarca",
+        postal_code="111111",
+        country="CO",
+        phone="+48713988102",
+    )
+
+
+@pytest.fixture()
+def wompi_payment(payment_dummy):
+    payment_dummy.total = TRANSACTION_AMOUNT
+    payment_dummy.currency = TRANSACTION_CURRENCY
+    return payment_dummy
+
+
+@pytest.fixture
+def acceptance_token(sandbox_gateway_config):
+    response = read_json("acceptance_token.json")
+    return response["data"]["presigned_acceptance"]["acceptance_token"]

@@ -1,82 +1,28 @@
-import os
-from decimal import Decimal
 from math import isclose
 from unittest import mock
-from urllib.request import urlopen
 
 import pytest
-import vcr
 
-from .....account.models import Address
-from .... import ChargeStatus
-from ....interface import AddressData, CustomerSource, GatewayConfig, PaymentMethodInfo
+from ....interface import AddressData
 from ....utils import create_payment_information
 from .. import TransactionKind, authorize, capture, get_client_token, refund, void
 from ..client.wompi_handler import *
 from .common import *
 
-TRANSACTION_AMOUNT = Decimal(4242.42)
-TRANSACTION_REFUND_AMOUNT = Decimal(24.24)
-TRANSACTION_CURRENCY = "COP"
 
-
-@pytest.fixture()
-def gateway_config():
-    return GatewayConfig(
-        gateway_name="Wompi",
-        auto_capture=True,
-        supported_currencies="COP",
-        connection_params={
-            "public_key": "public",
-            "private_key": "secret",
-            "event_key": "event_key",
-        },
-    )
-
-
-@pytest.fixture()
-def sandbox_gateway_config(gateway_config):
-    connection_params = {
-        "public_key": "test_public_key",
-        "private_key": "test_private_key",
-        "event_key": "test_event_key",
-    }
-    gateway_config.connection_params.update(connection_params)
-    return gateway_config
-
-
-@pytest.fixture
-def address(db):  # pylint: disable=W0613
-    return Address.objects.create(
-        first_name="John",
-        last_name="Doe",
-        company_name="Mirumee Software",
-        street_address_1="Tęczowa 7",
-        street_address_2="Tęczowa 7",
-        city="Bogotá",
-        city_area="Cundinamarca",
-        postal_code="111111",
-        country="CO",
-        phone="+48713988102",
-    )
-
-
-@pytest.fixture()
-def wompi_payment(payment_dummy):
-    payment_dummy.total = TRANSACTION_AMOUNT
-    payment_dummy.currency = TRANSACTION_CURRENCY
-    return payment_dummy
-
-
-@pytest.fixture
-def acceptance_token(sandbox_gateway_config):
+@pytest.mark.integration
+def test_acceptance_token(sandbox_gateway_config):
     with mock.patch(
         "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
     ) as mock_acceptance_token:
-        mock_acceptance_token.return_value = read_json("acceptance_token.json")
+        expected_response = read_json("acceptance_token.json")
+        mock_acceptance_token.return_value = expected_response
         obj = AcceptanceTokenRequest(sandbox_gateway_config.connection_params)
         token = obj.send_request()
-        return token.acceptance_token
+        assert (
+            expected_response["data"]["presigned_acceptance"]["acceptance_token"]
+            == token.acceptance_token
+        )
 
 
 @pytest.mark.integration
@@ -134,7 +80,7 @@ def test_get_financial_inst(sandbox_gateway_config):
 
 @pytest.mark.integration
 @pytest.mark.parametrize("payment_method", VARIOUS_METHODS)
-def test_generate_transaction_with_validation(payment_method, sandbox_gateway_config):
+def test_generate_transaction_success(payment_method, sandbox_gateway_config):
     with mock.patch(
         "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
     ) as mock_transaction:
@@ -156,6 +102,24 @@ def test_generate_transaction_with_validation(payment_method, sandbox_gateway_co
             "Authorization"
         )
         assert TransactionDAO(**expected_resp["data"]) == response
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("payment_method", VARIOUS_METHODS)
+def test_generate_transaction_throws_validation_on_incomplete_data(
+    payment_method, sandbox_gateway_config
+):
+    with mock.patch(
+        "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
+    ) as mock_transaction:
+        payload = {
+            "acceptance_token": "random_123",
+            "amount_in_cents": 2500000,
+            "currency": "COP",
+            "customer_email": "pepito_perez@example.com",
+            "reference": "22234ed4",
+            "payment_method": payment_method,
+        }
 
         with pytest.raises(TransactionRequest.exception_class) as execinfo:
             incomplete_payment_data = payload.copy()
@@ -198,7 +162,10 @@ def test_void_transaction(sandbox_gateway_config):
 
 
 @pytest.mark.integration
-def test_authorize(sandbox_gateway_config, wompi_payment, address, acceptance_token):
+@pytest.mark.parametrize("payment_method", VARIOUS_METHODS)
+def test_authorize(
+    payment_method, sandbox_gateway_config, wompi_payment, address, acceptance_token
+):
     with mock.patch(
         "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
     ) as mock_create_transaction:
@@ -210,7 +177,7 @@ def test_authorize(sandbox_gateway_config, wompi_payment, address, acceptance_to
             "test",
             additional_data={
                 "acceptance_token": acceptance_token,
-                "payment_method": {"type": "NEQUI", "phone_number": "3991111111"},
+                "payment_method": payment_method,
             },
         )
         payment_info.shipping = AddressData(**address.as_data())

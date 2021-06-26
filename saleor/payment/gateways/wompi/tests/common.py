@@ -1,6 +1,11 @@
 import json
+from decimal import Decimal
 
 from ..client.constants import WOMPI_PAYMENT_METHODS
+
+TRANSACTION_AMOUNT = Decimal(4242.42)
+TRANSACTION_REFUND_AMOUNT = Decimal(24.24)
+TRANSACTION_CURRENCY = "COP"
 
 MOCK_RESPONSE_PATH = "saleor/payment/gateways/wompi/client/mock_responses"
 

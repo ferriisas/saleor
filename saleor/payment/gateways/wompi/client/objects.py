@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from .constants import TransactionStates
+
 
 @dataclass()
 class FinInstDAO:
@@ -66,3 +68,23 @@ class TransactionDAO:
         if self.payment_method:
             extra = self.payment_method.get("extra", {})
             return extra.get("transaction_id")
+
+    @property
+    def is_pending(self):
+        return self.status == TransactionStates.PENDING
+
+    @property
+    def is_approved(self):
+        return self.status == TransactionStates.APPROVED
+
+    @property
+    def is_declined(self):
+        return self.status == TransactionStates.DECLINED
+
+    @property
+    def is_voided(self):
+        return self.status == TransactionStates.VOIDED
+
+    @property
+    def is_error(self):
+        return self.status == TransactionStates.ERROR
