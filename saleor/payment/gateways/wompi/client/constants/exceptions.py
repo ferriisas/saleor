@@ -21,6 +21,10 @@ class WompiUnknownException(Exception):
     pass
 
 
+class WompiNotImplementedException(Exception):
+    pass
+
+
 HTTP_STATUS_EXCEPTION_MAPPING = {
     HTTP_STATUS_CODE.Unauthorized: WompiUnauthorizedException,
     HTTP_STATUS_CODE.NotFound: WompiNotFoundException,

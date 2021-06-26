@@ -149,6 +149,7 @@ def test_void_transaction(sandbox_gateway_config):
     with mock.patch(
         "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
     ) as mock_transaction:
+        # TODO: Add the correct response after checking from Wompi.
         expected_resp = read_json("transaction.json")
         mock_transaction.return_value = expected_resp
         obj = TransactionRequest(sandbox_gateway_config.connection_params)
@@ -159,6 +160,16 @@ def test_void_transaction(sandbox_gateway_config):
             "Authorization"
         )
         assert TransactionDAO(**expected_resp["data"]) == response
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("payment_method", VARIOUS_METHODS)
+def test_refund_transaction(payment_method, sandbox_gateway_config):
+    with pytest.raises(WompiNotImplementedException):
+        # Wompi Doesn't support refund..So Will always get WompiNotImplementedException
+        resp = read_json("transaction.json")
+        obj = TransactionRequest(sandbox_gateway_config.connection_params)
+        obj.refund(resp["data"]["id"])
 
 
 @pytest.mark.integration

@@ -2,6 +2,7 @@ from .error_code import ERROR_CODE
 from .exceptions import (
     HTTP_STATUS_EXCEPTION_MAPPING,
     WompiNotFoundException,
+    WompiNotImplementedException,
     WompiTransactionException,
     WompiUnauthorizedException,
     WompiUnknownException,
@@ -113,5 +114,6 @@ __all__ = [
     "WompiNotFoundException",
     "WompiValidationException",
     "WompiUnknownException",
+    "WompiNotImplementedException",
     "HTTP_STATUS_EXCEPTION_MAPPING",
 ]

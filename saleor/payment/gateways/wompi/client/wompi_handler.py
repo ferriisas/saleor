@@ -170,6 +170,10 @@ class TransactionRequest(WompiHandler):
         self.authentication_required = True
         return self.send_request()
 
+    def refund(self, payment_id):
+        # Implement the function when its available.
+        raise WompiNotImplementedException("Refund Not supported by Wompi.")
+
     def retrieve(self, payment_id) -> TransactionDAO:
         self.path = "transactions/{}".format(payment_id)
         self.method_type = MethodType.GET
