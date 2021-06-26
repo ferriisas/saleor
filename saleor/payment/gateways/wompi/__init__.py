@@ -5,6 +5,7 @@ import uuid
 
 from ... import TransactionKind
 from ...interface import GatewayConfig, GatewayResponse, PaymentData, PaymentMethodInfo
+from .client.constants import WOMPI_PAYMENT_METHODS
 from .client.wompi_handler import TransactionRequest, TransactionStates, WompiHandler
 from .utils import get_amount_for_wompi, get_amount_from_wompi, shipping_to_wompi_dict
 
@@ -13,15 +14,21 @@ def get_client_token(**_):
     return str(uuid.uuid4())
 
 
+def extract_payment_method(payment_information: PaymentData):
+    return (
+        payment_information.data.get("payment_method")
+        or payment_information.data.get("paymentMethod")
+        or {}
+    )
+
+
 def authorize(
     payment_information: PaymentData, config: GatewayConfig
 ) -> GatewayResponse:
     amount = get_amount_for_wompi(payment_information.amount)
     kind = TransactionKind.CAPTURE if config.auto_capture else TransactionKind.AUTH
     # Accept data in both keys: payment_method or paymentMethod
-    payment_method = payment_information.data.get(
-        "payment_method"
-    ) or payment_information.data.get("paymentMethod")
+    payment_method = extract_payment_method(payment_information)
     try:
         payload = {
             "acceptance_token": payment_information.data.get("acceptance_token"),
@@ -66,21 +73,42 @@ def capture(payment_information: PaymentData, config: GatewayConfig) -> GatewayR
 
 
 def refund(payment_information: PaymentData, config: GatewayConfig) -> GatewayResponse:
-    # Currently not supported by Wompi At the moment.
-    return _error_response(
-        TransactionKind.REFUND,
-        Exception("Refund Not supported by WOMPI."),
-        payment_information,
-    )
+    kind = TransactionKind.REFUND
+    payment_method = extract_payment_method(payment_information)
+    payment_type = payment_method.get("type")
+    if WOMPI_PAYMENT_METHODS.is_refund_available_for(payment_type):
+        # process Payment
+        # TODO: Add Code if we Wompi Starts supporting the Refund for any PaymnetType.
+        # Currently, it doesnot support any refund.
+        pass
+    else:
+        return _error_response(
+            TransactionKind.REFUND,
+            Exception(f"Refund Not supported by WOMPI for type: {payment_type}"),
+            payment_information,
+        )
 
 
 def void(payment_information: PaymentData, config: GatewayConfig) -> GatewayResponse:
-    # TODO: Add Validation. Check if TYPE is allowed for Refund. WOMPI_PAYMENT_METHODS.ALLOWED_TYPE_REFUND
-    return _error_response(
-        TransactionKind.REFUND,
-        Exception("Refund Not supported by WOMPI."),
-        payment_information,
-    )
+    payment_method = extract_payment_method(payment_information)
+    kind = TransactionKind.VOID
+    payment_type = payment_method.get("type")
+    if WOMPI_PAYMENT_METHODS.is_void_available_for(payment_type):
+        try:
+            conf = config.connection_params
+            tran_obj = TransactionRequest(conf)
+            tra_id = "aaa"
+            gateway_resp = tran_obj.void(tra_id)
+            response = _success_response(gateway_resp, kind=kind, success=True)
+        except Exception as exc:
+            response = _error_response(kind, exc, payment_information)
+        return response
+    else:
+        return _error_response(
+            TransactionKind.VOID,
+            Exception(f"Void Not supported by WOMPI for type: {payment_type}"),
+            payment_information,
+        )
 
 
 def _error_response(

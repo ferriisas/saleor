@@ -4,6 +4,7 @@ from typing import Dict
 import requests
 
 from .constants import *
+from .constants import WOMPI_PAYMENT_METHODS
 from .objects import *
 
 

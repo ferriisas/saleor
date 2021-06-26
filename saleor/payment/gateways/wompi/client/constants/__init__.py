@@ -35,8 +35,11 @@ class WOMPI_PAYMENT_METHODS:
     # Option which define current active payment method for Wompi.
     ACTIVE_PAYMENTS = [CARD, BANC_TRA_Button, NEQUI, PSE, BANCOLOMBIA_COLLECT]
 
+    # Refund  not Allowed for AnyPaymentMethod
+    ALLOWED_TYPE_REFUND = []
+
     #
-    ALLOWED_TYPE_REFUND = [CARD]
+    ALLOWED_TYPE_VOID = [CARD]
 
     REQUIRED_FIELDS = {
         CARD: ["type", "token"],
@@ -81,6 +84,14 @@ class WOMPI_PAYMENT_METHODS:
                 f"Missing fields for payment type {type}: "
                 f"{',' .join(list(missing_fields))}"
             )
+
+    @classmethod
+    def is_refund_available_for(cls, payment_type):
+        return payment_type in cls.ALLOWED_TYPE_REFUND
+
+    @classmethod
+    def is_void_available_for(cls, payment_type):
+        return payment_type in cls.ALLOWED_TYPE_VOID
 
 
 class WebhookEvents:
