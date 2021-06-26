@@ -168,7 +168,8 @@ class TransactionRequest(WompiHandler):
         self.path = "transactions/{}/void".format(payment_id)
         self.method_type = MethodType.POST
         self.authentication_required = True
-        return self.send_request()
+        resp = super().send_request()
+        return self.DAO(**resp.get("data", {}).get("transaction", {}))
 
     def refund(self, payment_id):
         # Implement the function when its available.

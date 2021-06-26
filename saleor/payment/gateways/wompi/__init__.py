@@ -97,7 +97,7 @@ def void(payment_information: PaymentData, config: GatewayConfig) -> GatewayResp
         try:
             conf = config.connection_params
             tran_obj = TransactionRequest(conf)
-            tra_id = "aaa"
+            tra_id = payment_information.token
             gateway_resp = tran_obj.void(tra_id)
             response = _success_response(gateway_resp, kind=kind, success=True)
         except Exception as exc:

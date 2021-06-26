@@ -19,6 +19,15 @@ def read_json(file_name):
         return json.load(f)
 
 
+DUMMY_CC_INFO = {
+    "number": "4242424242424242",  # Approved TXN
+    # "number": "4111111111111111",  # Declined
+    "cvc": "789",
+    "exp_month": "12",
+    "exp_year": "29",
+    "card_holder": "Pedro Pérez",
+}
+
 CC_PAYMENT_METHOD = {
     "type": WOMPI_PAYMENT_METHODS.CARD,
     "token": "tok_prod_1_BBb749EAB32e97a2D058Dd538a608301",

@@ -137,6 +137,7 @@ def wompi_address(db):  # pylint: disable=W0613
 def wompi_payment(payment_dummy):
     payment_dummy.total = TRANSACTION_AMOUNT
     payment_dummy.currency = TRANSACTION_CURRENCY
+    payment_dummy.gateway = WompiGatewayPlugin.PLUGIN_ID
     return payment_dummy
 
 
