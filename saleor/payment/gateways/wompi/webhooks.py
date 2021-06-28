@@ -56,9 +56,12 @@ def get_payment(transaction_id,) -> Optional[Payment]:
 def generate_acceptance_token(request: WSGIRequest, plugin):
     logger.info("Webhook request for WOMPI for generating Acceptance Token. %s")
     config = plugin.get_gateway_config().connection_params
-    wh = AcceptanceTokenRequest(config)
-    token = wh.send_request()
-    return JsonResponse(token.__dict__)
+    try:
+        wh = AcceptanceTokenRequest(config)
+        token = wh.send_request()
+        return JsonResponse(token.__dict__)
+    except Exception as exc:
+        return HttpResponseBadRequest(str(exc))
 
 
 @transaction_with_commit_on_errors()

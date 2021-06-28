@@ -42,6 +42,19 @@ def test_generate_acceptance_token(mock_request, wompi_plugin):
     assert response.status_code == 200
 
 
+@mock.patch("saleor.payment.gateways.wompi.client.wompi_handler.requests.Session.get")
+def test_generate_acceptance_token_return_error(mock_request, wompi_plugin):
+    exception_text = "Raised Dummy Exception"
+    mock_request.return_value.url = ""
+    mock_request.return_value.status_code = 400
+    mock_request.return_value.text = exception_text
+    request_mock = mock.Mock()
+    request_mock.GET = {}
+    response = generate_acceptance_token(request_mock, wompi_plugin())
+    assert 400 == response.status_code
+    assert exception_text in str(response.content)
+
+
 def test_handle_webhook(wompi_plugin):
     request_data = read_json("transaction_webhook.json")
     request_mock = mock.Mock()

@@ -6,6 +6,30 @@ from ..client.wompi_handler import *
 from .common import *
 
 
+@pytest.mark.parametrize(
+    "status_code, exception",
+    [
+        (401, WompiUnauthorizedException),
+        (404, WompiNotFoundException),
+        (422, WompiValidationException),
+    ],
+)
+def test_wompi_handler_raise_Exception(status_code, exception, sandbox_gateway_config):
+    with mock.patch(
+        "saleor.payment.gateways.wompi.client.wompi_handler.requests.Session.get"
+    ) as mock_request:
+        exception_text = "Raised Dummy Exception"
+        with pytest.raises(exception) as excinfo:
+            mock_request.return_value.url = ""
+            mock_request.return_value.status_code = status_code
+            mock_request.return_value.text = exception_text
+            request_mock = mock.Mock()
+            request_mock.GET = {}
+            obj = WompiHandler(sandbox_gateway_config.connection_params)
+            obj.method_type = "get"
+            obj.send_request()
+
+
 @pytest.mark.integration
 def test_acceptance_token(sandbox_gateway_config):
     with mock.patch(
