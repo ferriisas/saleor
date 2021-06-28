@@ -15,9 +15,10 @@ from . import (
     refund,
     void,
 )
-from .webhooks import handle_webhook
+from .webhooks import generate_acceptance_token, handle_webhook
 
 WEBHOOK_PATH = "/webhooks"
+GENERATE_ACP_TOKEN_PATH = "/acceptance-token"
 GATEWAY_NAME = "Wompi"
 
 if TYPE_CHECKING:
@@ -144,6 +145,8 @@ class WompiGatewayPlugin(BasePlugin):
     def webhook(self, request: WSGIRequest, path: str, previous_value) -> HttpResponse:
         if path.startswith(WEBHOOK_PATH):
             return handle_webhook(request, self)
+        elif path.startswith(GENERATE_ACP_TOKEN_PATH):
+            return generate_acceptance_token(request, self)
         return HttpResponseNotFound()
 
     @require_active_plugin

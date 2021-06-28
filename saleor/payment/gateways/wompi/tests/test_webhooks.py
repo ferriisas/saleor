@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from ..webhooks import generate_checksum, handle_webhook
+from ..webhooks import generate_acceptance_token, generate_checksum, handle_webhook
 from .common import *
 
 
@@ -18,6 +18,28 @@ def test_checksum(wompi_plugin):
 
     generated_checksum = generate_checksum(request_data, plugin.get_gateway_config())
     assert expected_value == generated_checksum
+
+
+@mock.patch(
+    "saleor.payment.gateways.wompi.client.wompi_handler.WompiHandler.send_request"
+)
+def test_generate_acceptance_token(mock_request, wompi_plugin):
+    expected_resp = read_json("acceptance_token.json")
+    mock_request.return_value = expected_resp
+    request_mock = mock.Mock()
+    request_mock.GET = {}
+    response = generate_acceptance_token(request_mock, wompi_plugin())
+
+    response_data = json.loads(response.content)
+    assert (
+        response_data["acceptance_token"]
+        == expected_resp["data"]["presigned_acceptance"]["acceptance_token"]
+    )
+    assert (
+        response_data["permalink"]
+        == expected_resp["data"]["presigned_acceptance"]["permalink"]
+    )
+    assert response.status_code == 200
 
 
 def test_handle_webhook(wompi_plugin):
