@@ -41,19 +41,19 @@ class AcceptanceTokenDAO:
 @dataclass(init=False)
 class TransactionDAO:
     id: str
-    created_at: str
     amount_in_cents: str
     reference: str
     currency: str
     payment_method_type: str
     status: str
-    payment_method: dict
+    payment_method: dict = None
     customer_email: str = None
     shipping_address: str = None
     payment_source_id: str = None
     payment_link_id: str = None
     customer_data: str = None
     bill_id: str = None
+    created_at: str = None
 
     def __init__(self, **kwargs):
         for _ in kwargs:
@@ -62,7 +62,7 @@ class TransactionDAO:
     @property
     def vendor_transaction_id(self):
         """
-        Returns the Payment Transaction Iof Wompi.
+        Returns the Payment Transaction of Wompi.
         :return:
         """
         if self.payment_method:

@@ -12,6 +12,7 @@ from .common import *
         (401, WompiUnauthorizedException),
         (404, WompiNotFoundException),
         (422, WompiValidationException),
+        (433, WompiUnknownException),
     ],
 )
 def test_wompi_handler_raise_Exception(status_code, exception, sandbox_gateway_config):

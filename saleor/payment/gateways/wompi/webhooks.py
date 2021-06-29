@@ -80,12 +80,22 @@ def handle_webhook(request: WSGIRequest, plugin):
         return HttpResponseBadRequest("Invalid Checksum.")
 
     if event == WebhookEvents.TXN_UPDATE:
+        """
+        Steps:
+           (TransactionStates.PENDING, ->  Don't process order..It may be just for acknowledgement.
+        (TransactionStates.APPROVED ->  Capture the pyment and procss the Order.
+        (TransactionStates.VOIDED, ->   Txn Cancelled. Don't prpcess the order.
+        (TransactionStates.DECLINED -> # Txn declined. Don't process the order.
+        """
         txn_data = json_data.get("data", {}).get("transaction", {})
-        transaction_id = TransactionDAO(**txn_data)
-
-        # plugin.capture()
-    # event_handler = EVENT_MAP.get(notification.get("eventCode", ""))
-    # if event_handler:
-    #     event_handler(notification, gateway_config)
-    #     return HttpResponse("[accepted]")
+        transaction = TransactionDAO(**txn_data)
+        if transaction.is_pending:
+            # DO nothing..so pass
+            pass
+        elif transaction.is_approved:
+            plugin.capture_payment()
+        elif transaction.is_declined:
+            plugin.void_payment()
+        elif transaction.is_voided:
+            plugin.void_payment()
     return HttpResponse("[accepted]")

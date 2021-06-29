@@ -3,6 +3,7 @@ from unittest import mock
 
 import pytest
 
+from ..client.constants import TransactionStates
 from ..webhooks import generate_acceptance_token, generate_checksum, handle_webhook
 from .common import *
 
@@ -55,7 +56,7 @@ def test_generate_acceptance_token_return_error(mock_request, wompi_plugin):
     assert exception_text in str(response.content)
 
 
-def test_handle_webhook(wompi_plugin):
+def test_handle_webhook_validate_checksum(wompi_plugin):
     request_data = read_json("transaction_webhook.json")
     request_mock = mock.Mock()
     request_mock.GET = {}
@@ -69,8 +70,39 @@ def test_handle_webhook(wompi_plugin):
         mock_checksum.return_value = request_data.get("signature", {}).get("checksum")
         response = handle_webhook(request_mock, wompi_plugin())
         assert response.status_code == 200
-
         mock_checksum.return_value = None
         response = handle_webhook(request_mock, wompi_plugin())
         assert response.status_code == 400
         assert response.content == b"Invalid Checksum."
+
+
+@pytest.mark.parametrize(
+    "txn_status,process_order",
+    [
+        (
+            TransactionStates.PENDING,
+            False,
+        ),  # DOne't process order..It may be just for acknowledgement.
+        (TransactionStates.APPROVED, True),  # Capture the pyment and procss the Order.
+        (TransactionStates.VOIDED, False),  #  Txn Cancelled. DOn't prpcess the order.
+        (
+            TransactionStates.DECLINED,
+            False,
+        ),  # Txn declined. o=Don't process the oprder.
+    ],
+)
+def test_handle_webhook(txn_status, process_order, wompi_plugin):
+    request_data = read_json("transaction_webhook.json")
+    request_data["data"]["transaction"]["status"] = txn_status
+    request_mock = mock.Mock()
+    request_mock.GET = {}
+    request_mock.GET = {}
+    request_mock.POST = json.dumps(request_data)
+    request_mock.body = json.dumps(request_data)
+
+    with mock.patch(
+        "saleor.payment.gateways.wompi.webhooks.generate_checksum"
+    ) as mock_checksum:
+        mock_checksum.return_value = request_data.get("signature", {}).get("checksum")
+        response = handle_webhook(request_mock, wompi_plugin())
+        assert response.status_code == 200

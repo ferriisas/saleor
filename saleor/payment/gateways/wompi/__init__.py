@@ -26,7 +26,7 @@ def authorize(
     payment_information: PaymentData, config: GatewayConfig
 ) -> GatewayResponse:
     amount = get_amount_for_wompi(payment_information.amount)
-    kind = TransactionKind.CAPTURE if config.auto_capture else TransactionKind.AUTH
+    kind = TransactionKind.AUTH
     # Accept data in both keys: payment_method or paymentMethod
     payment_method = extract_payment_method(payment_information)
     try:
