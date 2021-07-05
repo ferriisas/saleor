@@ -89,13 +89,16 @@ def handle_webhook(request: WSGIRequest, plugin):
         """
         txn_data = json_data.get("data", {}).get("transaction", {})
         transaction = TransactionDAO(**txn_data)
-        if transaction.is_pending:
-            # DO nothing..so pass
-            pass
-        elif transaction.is_approved:
-            plugin.capture_payment()
-        elif transaction.is_declined:
-            plugin.void_payment()
-        elif transaction.is_voided:
-            plugin.void_payment()
+        # FIXME : Implement the below methods based on Webhook Call.
+        # TODO: 1. Update txn status
+        # TODO: 2. Update order_state.
+    #     if transaction.is_pending:
+    #         # DO nothing..so pass
+    #         pass
+    #     elif transaction.is_approved:
+    #         order_captured(payment.order, None, new_transaction.amount, payment)
+    #     elif transaction.is_declined:
+    #         cancel_order(payment.order, None)
+    #     elif transaction.is_voided:
+    #         cancel_order(payment.order, None)
     return HttpResponse("[accepted]")

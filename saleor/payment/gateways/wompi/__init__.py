@@ -1,6 +1,6 @@
 # The list of currencies supported by Wompi
 SUPPORTED_CURRENCIES = ("COP",)
-
+import logging
 import uuid
 
 from ... import TransactionKind
@@ -8,6 +8,8 @@ from ...interface import GatewayConfig, GatewayResponse, PaymentData, PaymentMet
 from .client.constants import WOMPI_PAYMENT_METHODS
 from .client.wompi_handler import TransactionRequest, TransactionStates, WompiHandler
 from .utils import get_amount_for_wompi, get_amount_from_wompi, shipping_to_wompi_dict
+
+logger = logging.getLogger(__name__)
 
 
 def get_client_token(**_):
