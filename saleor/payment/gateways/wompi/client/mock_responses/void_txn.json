@@ -1,0 +1,39 @@
+{
+  "data": {
+    "status": "APPROVED",
+    "status_message": null,
+    "transaction": {
+      "id": "110801-1624714108-76636",
+      "created_at": "2021-06-26T13:28:29.366Z",
+      "amount_in_cents": 2500000,
+      "reference": "6d2930b5-dacb-4fbf-914b-1c449cb1cc3f",
+      "customer_email": "pepito_perez@example.com",
+      "currency": "COP",
+      "payment_method_type": "CARD",
+      "payment_method": {
+        "type": "CARD",
+        "extra": {
+          "bin": "424242",
+          "name": "VISA-4242",
+          "brand": "VISA",
+          "exp_year": "29",
+          "exp_month": "12",
+          "last_four": "4242",
+          "card_holder": "Pedro Pérez",
+          "external_identifier": "dhGRzwnhfs"
+        },
+        "installments": 1
+      },
+      "status": "VOIDED",
+      "status_message": null,
+      "shipping_address": null,
+      "redirect_url": null,
+      "payment_source_id": null,
+      "payment_link_id": null,
+      "customer_data": null,
+      "bill_id": null,
+      "taxes": []
+    }
+  },
+  "meta": {}
+}

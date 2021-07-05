@@ -3,42 +3,22 @@ from typing import Dict
 
 import requests
 
-from .constants import HTTP_STATUS_CODE, WompiURL
-from .exceptions import WompiException, WompiTransactionException
-from .objects import AcceptanceTokenDAO, TransactionDAO
-
-
-class MethodType:
-    GET = "GET"
-    POST = "POST"
-
-
-class TransactionStates:
-    PENDING = "PENDING"
-    APPROVED = "APPROVED"
-    DECLINED = "DECLINED"
-    VOIDED = "VOIDED"
-    ERROR = "ERROR"
-
-
-class WOMPI_PAYMENT_METHODS:
-    CARD = "CARD"
-    NEQUI = "CARD"
-    PSE = "CARD"
-    CASH_AT_BBC = "CARD"
-    BANC_TRA_Button = "BANCOLOMBIA_COLLECT"
+from .constants import *
+from .constants import WOMPI_PAYMENT_METHODS
+from .objects import *
 
 
 class WompiHandler:
     method_type = None
     authentication_required = False
     url = ""
+    path = ""
     payload = ""
-    exception_class = WompiException
+    exception_class = WompiUnknownException
 
     def __init__(self, config):
-        self._key = config.get("key")
-        self._secret = config.get("secret")
+        self._key = config.get("public_key")
+        self._secret = config.get("private_key")
         self.sandbox = config.get("sandbox", True)
         self.authentication_required = True
         assert self._key != None, "Invalid key for Wompi"
@@ -53,7 +33,7 @@ class WompiHandler:
 
     @property
     def _get_url(self):
-        return self.url
+        return self._make_url(self.path)
 
     def _append_authorization(self, headers):
         if self.authentication_required:
@@ -64,28 +44,73 @@ class WompiHandler:
 
         return headers
 
-    def send_request(self):
+    def send_request(self, **kwargs):
         headers = {"Content-Type": "application/json"}
         headers = self._append_authorization(headers)
-        response = requests.request(
-            self.method_type, self._get_url, headers=headers, data=self.payload
+        session = requests.Session()
+        response = getattr(session, self.method_type)(
+            self._get_url, headers=headers, data=kwargs.get("payload")
         )
         if response.status_code in HTTP_STATUS_CODE.OK_CODES:
+            session.close()
             return response.json()
         else:
-            raise self.exception_class(response.text)
-
-    def void_transaction(self, **kwargs):
-        pass
-
-    def refund(self, **kwargs):
-        pass
-
-    def process_payment(self, **kwargs):
-        pass
+            raise HTTP_STATUS_EXCEPTION_MAPPING.get(
+                response.status_code, WompiUnknownException
+            )(response.text)
 
 
-class AcceptanceToken(WompiHandler):
+class TokenizeCardRequest(WompiHandler):
+    path = "tokens/cards"
+    method_type = MethodType.POST
+    authentication_required = True
+    DAO = CardInfoDAO
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _append_authorization(self, headers):
+        # For Card TOkenization, we need to authenticate with public key.
+        if self.authentication_required:
+            headers["Authorization"] = "Bearer {}".format(self._key)
+        return headers
+
+    def tokenize_card(self, payload):
+        required_keys = ["number", "cvc", "exp_month", "exp_year", "card_holder"]
+        if not set(required_keys).issubset(set(payload.keys())):
+            raise self.exception_class(
+                "Required keys are not provided for card Tokenization"
+            )
+
+        self.payload = json.dumps(payload)
+        return self.send_request(payload=self.payload)
+
+    def send_request(self, **kwargs):
+        resp = super().send_request(**kwargs)
+        return self.DAO(**resp.get("data"))
+
+
+class FinancialInstitutionsRequest(WompiHandler):
+    path = "pse/financial_institutions"
+    method_type = MethodType.GET
+    authentication_required = True
+    DAO = FinInstDAO
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _append_authorization(self, headers):
+        # For Card TOkenization, we need to authenticate with public key.
+        if self.authentication_required:
+            headers["Authorization"] = "Bearer {}".format(self._key)
+        return headers
+
+    def send_request(self):
+        resp = super().send_request()
+        return [self.DAO(**row) for row in resp.get("data")]
+
+
+class AcceptanceTokenRequest(WompiHandler):
     path = "merchants/{key}"
     method_type = MethodType.GET
     authentication_required = False
@@ -103,12 +128,19 @@ class AcceptanceToken(WompiHandler):
         return self.DAO(**resp.get("data"))
 
 
-class Transaction(WompiHandler):
+class TransactionRequest(WompiHandler):
     path = "transactions"
     method_type = MethodType.POST
     authentication_required = True
     DAO = TransactionDAO
     exception_class = WompiTransactionException
+    required_transactin_keys = [
+        "acceptance_token",
+        "amount_in_cents",
+        "customer_email",
+        "reference",
+        "payment_method",
+    ]
 
     @property
     def _get_url(self):
@@ -117,27 +149,39 @@ class Transaction(WompiHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def generate_transaction(self, payload: Dict):
-        # TODO: moce to validate function.
-        required_keys = [
-            "acceptance_token",
-            "amount_in_cents",
-            "customer_email",
-            "reference",
-            "payment_method",
-        ]
+    def validate_transaction_data(self, payload):
+        required_keys = self.required_transactin_keys
         if not set(required_keys).issubset(set(payload.keys())):
-            raise self.exception_class("Required keys are not provided ")
-        self.payload = json.dumps(payload)
-        return self.send_request()
+            missing_key = set(required_keys) - set(payload.keys())
+            raise self.exception_class(
+                f"Required keys are not provided: {', '.join(missing_key)}"
+            )
+        WOMPI_PAYMENT_METHODS.is_valid_payment_data(payload.get("payment_method"))
 
-    def get_transaction(self, payment_id):
+    def generate(self, payload: Dict) -> TransactionDAO:
+        self.method_type = MethodType.POST
+        self.validate_transaction_data(payload)
+        self.payload = json.dumps(payload)
+        return self.send_request(payload=self.payload)
+
+    def void(self, payment_id) -> TransactionDAO:
+        self.path = "transactions/{}/void".format(payment_id)
+        self.method_type = MethodType.POST
+        self.authentication_required = True
+        resp = super().send_request()
+        return self.DAO(**resp.get("data", {}).get("transaction", {}))
+
+    def refund(self, payment_id):
+        # Implement the function when its available.
+        raise WompiNotImplementedException("Refund Not supported by Wompi.")
+
+    def retrieve(self, payment_id) -> TransactionDAO:
         self.path = "transactions/{}".format(payment_id)
         self.method_type = MethodType.GET
         self.authentication_required = False
         resp = super().send_request()
         return self.DAO(**resp.get("data"))
 
-    def send_request(self):
-        resp = super().send_request()
+    def send_request(self, **kwargs) -> TransactionDAO:
+        resp = super().send_request(**kwargs)
         return self.DAO(**resp.get("data"))

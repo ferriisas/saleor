@@ -1,0 +1,15 @@
+{
+  "status": "CREATED",
+  "data": {
+    "id": "tok_test_10801_762E50797F5d90CAdef30646aa63d5F2",
+    "created_at": "2021-06-22T19:55:13.984+00:00",
+    "brand": "VISA",
+    "name": "VISA-4242",
+    "last_four": "4242",
+    "bin": "424242",
+    "exp_year": "29",
+    "exp_month": "12",
+    "card_holder": "Pedro Pérez",
+    "expires_at": "2021-12-19T19:55:13.000Z"
+  }
+}

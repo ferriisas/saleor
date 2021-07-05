@@ -1,5 +1,8 @@
 from typing import TYPE_CHECKING, List
 
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse, HttpResponseNotFound
+
 from saleor.plugins.base_plugin import BasePlugin, ConfigurationTypeField
 
 from ..utils import get_supported_currencies
@@ -7,15 +10,15 @@ from . import (
     GatewayConfig,
     authorize,
     capture,
-    confirm,
     get_client_token,
     process_payment,
     refund,
     void,
 )
+from .webhooks import generate_acceptance_token, handle_webhook
 
-# from . import GatewayConfig
-
+WEBHOOK_PATH = "/webhooks"
+GENERATE_ACP_TOKEN_PATH = "/acceptance-token"
 GATEWAY_NAME = "Wompi"
 
 if TYPE_CHECKING:
@@ -52,6 +55,11 @@ class WompiGatewayPlugin(BasePlugin):
             "help_text": "Provide Wompi sandbox secret API key.",
             "label": "Sandbox Secret API key",
         },
+        "Sandbox Event API key": {
+            "type": ConfigurationTypeField.SECRET,
+            "help_text": "Provide Wompi sandbox event API key.",
+            "label": "Sandbox Event API key",
+        },
         "Public API key": {
             "type": ConfigurationTypeField.SECRET,
             "help_text": "Provide Wompi public API key.",
@@ -62,22 +70,16 @@ class WompiGatewayPlugin(BasePlugin):
             "help_text": "Provide Wompi secret API key.",
             "label": "Secret API key",
         },
+        "Event API key": {
+            "type": ConfigurationTypeField.SECRET,
+            "help_text": "Provide Wompi event API key.",
+            "label": "Event API key",
+        },
         "Use sandbox": {
             "type": ConfigurationTypeField.BOOLEAN,
             "help_text": "Determines if Saleor should use Wompi sandbox API.",
             "label": "Use sandbox",
         },
-        # "Store customers card": {
-        #     "type": ConfigurationTypeField.BOOLEAN,
-        #     "help_text": "Determines if Saleor should store cards on payments "
-        #                  "in Wompi customer.",
-        #     "label": "Store customers card",
-        # },
-        # "Automatic payment capture": {
-        #     "type": ConfigurationTypeField.BOOLEAN,
-        #     "help_text": "Determines if Saleor should automaticaly capture payments.",
-        #     "label": "Automatic payment capture",
-        # },
         "Supported currencies": {
             "type": ConfigurationTypeField.STRING,
             "help_text": "Determines currencies supported by gateway."
@@ -88,8 +90,10 @@ class WompiGatewayPlugin(BasePlugin):
     DEFAULT_CONFIGURATION = [
         {"name": "Sandbox Public API key", "value": None},
         {"name": "Sandbox Secret API key", "value": None},
+        {"name": "Sandbox Event API key", "value": None},
         {"name": "Public API key", "value": None},
         {"name": "Secret API key", "value": None},
+        {"name": "Event API key", "value": None},
         {"name": "Use sandbox", "value": True},
         {"name": "Store customers card", "value": False},
         {"name": "Automatic payment capture", "value": True},
@@ -100,20 +104,50 @@ class WompiGatewayPlugin(BasePlugin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         configuration = {item["name"]: item["value"] for item in self.configuration}
-        self.config = GatewayConfig(
+        self.configuration_dict = configuration
+        self.sandbox_mode = kwargs.get("sandbox_mode") or configuration.get(
+            "Use sandbox", True
+        )
+        self.config = self.get_gateway_config()
+
+    @property
+    def _get_public_key(self):
+        _ = "Sandbox Public API key" if self.sandbox_mode else "Public API key"
+        return self.configuration_dict.get(_)
+
+    @property
+    def _get_private_key(self):
+        _ = "Sandbox Secret API key" if self.sandbox_mode else "Secret API key"
+        return self.configuration_dict.get(_)
+
+    @property
+    def _get_event_key(self):
+        _ = "Sandbox Event API key" if self.sandbox_mode else "Event API key"
+        return self.configuration_dict.get(_)
+
+    def _get_gateway_config(self) -> GatewayConfig:
+        return self.get_gateway_config()
+
+    def get_gateway_config(self):
+        return GatewayConfig(
             gateway_name=GATEWAY_NAME,
-            auto_capture=True,  #  configuration["Automatic payment capture"],
-            supported_currencies=configuration["Supported currencies"],
+            auto_capture=True,
+            supported_currencies=self.configuration_dict["Supported currencies"],
             connection_params={
-                "sandbox_mode": configuration["Use sandbox"],
-                "public_key": configuration["Public API key"],
-                "private_key": configuration["Secret API key"],
+                "sandbox_mode": self.sandbox_mode,
+                "public_key": self._get_public_key,
+                "private_key": self._get_private_key,
+                "event_key": self._get_event_key,
             },
-            store_customer=False,  # configuration["Store customers card"],
+            store_customer=False,
         )
 
-    def _get_gateway_config(self):
-        return self.config
+    def webhook(self, request: WSGIRequest, path: str, previous_value) -> HttpResponse:
+        if path.startswith(WEBHOOK_PATH):
+            return handle_webhook(request, self)
+        elif path.startswith(GENERATE_ACP_TOKEN_PATH):
+            return generate_acceptance_token(request, self)
+        return HttpResponseNotFound()
 
     @require_active_plugin
     def authorize_payment(
@@ -155,16 +189,16 @@ class WompiGatewayPlugin(BasePlugin):
 
     @require_active_plugin
     def get_client_token(self, token_config: "TokenConfig", previous_value):
-        return get_client_token(self._get_gateway_config(), token_config)
+        return get_client_token(self.get_gateway_config(), token_config)
 
     @require_active_plugin
     def get_supported_currencies(self, previous_value):
-        config = self._get_gateway_config()
+        config = self.get_gateway_config()
         return get_supported_currencies(config, GATEWAY_NAME)
 
     @require_active_plugin
     def get_payment_config(self, previous_value):
-        config = self._get_gateway_config()
+        config = self.get_gateway_config()
         return [
             {"field": "api_key", "value": config.connection_params["public_key"]},
             {"field": "store_customer_card", "value": config.store_customer},
